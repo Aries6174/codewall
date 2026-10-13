@@ -1,6 +1,6 @@
 export default function Sidebar(){
     return (
-        <aside className="flex w-14 flex-col items-center gap-6 border border-[#494538] bg-[#171816] py-6">
+        <aside className="flex h-full w-14 shrink-0 flex-col items-center gap-6 border border-[#494538] bg-[#171816] py-6">
             <a
                 href="#home"
                 title="Home"

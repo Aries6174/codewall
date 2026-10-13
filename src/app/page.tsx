@@ -1,71 +1,84 @@
-import TopBar from "@/components/TopBar"
-import Sidebar from "@/components/Sidebar"
 
-export default function Home(){
-  return(
-    <main id="home" className="min-h-screen bg-background text-foreground">
-      {/* Top Navigation */}
+import TopBar from "@/components/TopBar";
+import Sidebar from "@/components/Sidebar";
+import AboutPanel from "@/components/AboutPanel";
+import ProjectsPanel from "@/components/ProjectsPanel";
+import TechStackPanel from "@/components/TechStackPanel";
+import ActivityPanel from "@/components/ActivityPanel";
+import ArtworkPanel from "@/components/ArtworkPanel";
+
+export default function Home() {
+  return (
+    <main
+      id="home"
+      className="h-screen overflow-hidden bg-background text-foreground"
+    >
       <TopBar />
 
-      {/* Dashboard Layout */}
-      <div className="flex min-h-[calc(100vh-6rem)]">
+      <div className="flex h-[calc(100vh-2.5rem)] overflow-hidden">
         <Sidebar />
 
-        {/* Main Content */}
-        <section className="mx-auto grid max-w-7xl gap-8 px-6 py-12 md:grid-cols-2 md:items-center md:py-20">
-          <div>
-            <p className="mb-4 text-sm text-[#d94b43]">
-              [ DEVELOPER PROFILE / 001 ]
-            </p>
+        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1.6fr)_minmax(280px,1fr)] gap-3 overflow-hidden p-3">
+          {/* Center dashboard */}
+          <div className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_minmax(0,0.8fr)] gap-3 overflow-hidden">
+            {/* Introduction */}
+            <section className="min-h-0 overflow-hidden border border-[#494538] bg-[#171816] p-4">
+              <p className="mb-2 text-xs text-[#D94B43]">
+                {">"} WHOAMI
+              </p>
 
-            <h2 className="text-4xl font-bold tracking-tight sm:text-6xl">
-              ADRIAN JOEL
-              <span className="block text-[#f5c542]">
-                JASPA_
-              </span>
-            </h2>
+              <h1 className="text-2xl font-bold tracking-tight 2xl:text-4xl">
+                Adrian Joel{" "}
+                <span className="text-[#F5C542]">Jaspa_</span>
+              </h1>
 
-            <p className="mt-6 max-w-lg leading-7 text-[#92958B]">
-              Computer and Information Science graduate.
-              Building systems, interfaces, and digital experiences
-              one line of code at a time.
-            </p>
+              <p className="mt-3 text-sm text-[#F5C542]">
+                Developer / Web Creator / Problem Solver
+              </p>
 
-            <div className="mt-8 flex flex-wrap gap-4">
-              <a
-                href="#projects"
-                className="border border-[#f5c542] px-5 py-3 text-sm text-[#f5c542] transition-colors hover:bg-[#f5c542] hover:text-black"
+              <p className="mt-3 max-w-xl text-xs leading-5 text-[#92958B]">
+                I'm a Computer and Information Science graduate
+                who enjoys building websites, managing databases,
+                and turning ideas into real projects. I enjoy
+                coding, art, organization, and play.
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a
+                  href="#projects"
+                  className="border border-[#F5C542] px-4 py-3 text-xs transition-colors hover:bg-[#F5C542] hover:text-black"
                 >
-                  [ VIEW PROJECTS ]
+                  VIEW PROJECTS →
                 </a>
 
                 <a
                   href="#about"
-                  className="border border-[#494538] px-5 py-3 text-sm transition-colors hover:border-[#e6ddc9]"
+                  className="border border-[#494538] px-4 py-3 text-xs transition-colors hover:border-[#F5C542]"
                 >
-                  [ ABOUT ME ]
+                  ABOUT ME →
                 </a>
+              </div>
+            </section>
+
+            {/* Projects and tech stack */}
+            <div className="grid min-h-0 min-w-0 grid-cols-1 items-stretch gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+              <ProjectsPanel />
+              <TechStackPanel />
+            </div>
+
+            {/* About and activity */}
+            <div className="grid h-full min-h-0 min-w-0 grid-cols-1 gap-3 overflow-hidden md:grid-cols-2">
+              <AboutPanel />
+              <ActivityPanel />
             </div>
           </div>
 
-          {/* Artwork placeholder */}
-          <div className="flex min-h-72 items-center justify-center border border-[#494538] bg-[#171816] p-8">
-            <div className="text-center">
-              <p className="text-5xl text-[#f5c542]">{"</>"}</p>
-              <p className="mt-4 text-sm text-[#f5c542]">
-                ARTWORK MODULE
-              </p>
-              <p className="mt-2 text-xs text-[#92958B]">
-                FILIPINO CYBERPUNK // COMING SOON
-              </p>
-            </div>
+          {/* Right artwork column */}
+          <div className="min-h-0 min-w-0 overflow-hidden">
+            <ArtworkPanel />
           </div>
-        </section>
+        </div>
       </div>
-      {/* Footer */}
-      <footer className="border-t border-[#494538] px-6 py-4 text-xs text-[#92958b]">
-        ILOILO, PHILIPPINES // DESIGNED & BUILT BY ADRIAN
-      </footer>
     </main>
   );
 }

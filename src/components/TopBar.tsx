@@ -5,7 +5,7 @@ export default function TopBar(){
                 <span className="font-bold text-[#f5c542]">
                     ADRIAN PORTFOLIO
                 </span>
-                <span className="hidden text-[a392958B sm:inline">
+                <span className="hidden text-[#92958B] sm:inline">
                     &gt;_
                 </span>
                 <span className="hidden text-[#92958B] md:inline">
