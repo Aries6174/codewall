@@ -16,7 +16,13 @@ export default function CodeCanvas(){
 
         let animationId: number;
         let lastUpdate = 0;
-        let frame = 0;
+        const characters = Array.from(
+            { length: 4 },
+            () => Array.from(
+                { length: 16 },
+                () => Math.random() < 0.5 ? "1" : "0"
+            )
+        );
 
         const animate = (time: number) => {
             if (time - lastUpdate >= 180) {
@@ -27,16 +33,19 @@ export default function CodeCanvas(){
 
                 for (let row = 0; row < 4; row++){
                     for(let col = 0; col < 16; col++){
-                        const character = (row + col + frame) % 3 === 0 ? "1" : "0";
+                        if (Math.random() < 0.1) {
+                            characters[row][col] =
+                                characters[row][col] === "1" ? "0" : "1";
+                        }
 
+                        const character = characters[row][col];
                         const x = 12 + col * 18;
                         const y = 24 + row * 26;
 
                         ctx.fillText(character, x, y);
                     }
                 }
-
-            frame++;
+                
             lastUpdate = time;
         }
 
