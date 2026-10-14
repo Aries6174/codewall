@@ -30,7 +30,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background text-foreground">
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex w-full flex-col items-center gap-4 px-4">
         <p className="text-xs tracking-[0,3em] text-[#92958B]">
           ADRIAN.JS / SYSTEM_001
         </p>
