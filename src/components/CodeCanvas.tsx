@@ -16,6 +16,12 @@ export default function CodeCanvas(){
 
         let animationId: number;
         let lastUpdate = 0;
+
+        const mouse = {
+            x: -100,
+            y: -100
+        };
+
         const characters = Array.from(
             { length: 4 },
             () => Array.from(
@@ -24,39 +30,76 @@ export default function CodeCanvas(){
             )
         );
 
+        const handleMouseMove = (event: MouseEvent) => {
+            const rect = canvas.getBoundingClientRect();
+
+            mouse.x = (event.clientX - rect.left) * (canvas.width / rect.width);
+
+            mouse.y = (event.clientY - rect.top) * (canvas.height / rect.height);
+        };
+
+        const handleMouseLeave = () => {
+            mouse.x = -100;
+            mouse.y = -100;
+        };
+
+        canvas.addEventListener("mousemove", handleMouseMove);
+        canvas.addEventListener("mouseleave", handleMouseLeave);
+
         const animate = (time: number) => {
-            if (time - lastUpdate >= 180) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const shouldUpdate = time - lastUpdate >= 180;
 
-                ctx.font = "14px monospace";
-                ctx.fillStyle = "#F5C542";
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                for (let row = 0; row < 4; row++){
-                    for(let col = 0; col < 16; col++){
-                        if (Math.random() < 0.1) {
-                            characters[row][col] =
-                                characters[row][col] === "1" ? "0" : "1";
-                        }
+            ctx.font = "14px monospace";
+            ctx.fillStyle = "#F5C542";
 
-                        const character = characters[row][col];
-                        const x = 12 + col * 18;
-                        const y = 24 + row * 26;
-
-                        ctx.fillText(character, x, y);
+            for (let row = 0; row < 4; row++){
+                for(let col = 0; col < 16; col++){
+                    if (Math.random() < 0.1) {
+                        characters[row][col] =
+                            characters[row][col] === "1" ? "0" : "1";
                     }
-                }
-                
-            lastUpdate = time;
-        }
 
-        animationId = requestAnimationFrame(animate);
-    };
+                    const character = characters[row][col];
+                    const x = 12 + col * 18;
+                    const y = 24 + row * 26;
+
+                    const dx = mouse.x - x;
+                    const dy = mouse.y - y;
+
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 45) {
+                        ctx.fillStyle = "#E6DDC9";
+                    }else{
+                        ctx.fillStyle = "#F5C542"
+                    }
+
+                    ctx.fillText(character, x, y);
+                }
+            }
+
+            if (shouldUpdate){
+                lastUpdate = time;
+            }
+
+            ctx.beginPath();
+            ctx.arc(mouse.x, mouse.y, 4, 0, Math.PI * 2);
+            ctx.fillStyle = "#D94B43";
+            ctx.fill();  
+            lastUpdate = time;
+
+            animationId = requestAnimationFrame(animate);
+        };
     
-    animationId= requestAnimationFrame(animate);
+        animationId= requestAnimationFrame(animate);
     
-    return () => {
-        cancelAnimationFrame(animationId);
-    };
+        return () => {
+            cancelAnimationFrame(animationId);
+            canvas.removeEventListener("mousemove", handleMouseMove);
+            canvas.removeEventListener("mouseleave", handleMouseLeave);
+        };
     }, []);
 
     return (
