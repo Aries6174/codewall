@@ -5,6 +5,7 @@ import {useEffect, useState} from "react";
 const message = "SYSTEM DORMANT";
 
 import CodeCanvas from "@/components/CodeCanvas"
+import LivingCodeCanvas from "@/components/LivingCodeCanvas";
 import TopBar from "@/components/TopBar";
 import Sidebar from "@/components/Sidebar";
 import AboutPanel from "@/components/AboutPanel";
@@ -29,14 +30,16 @@ export default function Home() {
   }, [visibleCount]);
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-background text-foreground">
+    <main className="relative flex min-h-dvh items-center justify-center bg-background text-foreground">
+      
+      <LivingCodeCanvas />
+
       <div className="flex w-full flex-col items-center gap-4 px-4">
-        <p className="text-xs tracking-[0,3em] text-[#92958B]">
+        <p className="text-xs tracking-[0.3em] text-[#92958B]">
           ADRIAN.JS / SYSTEM_001
         </p>
 
         <CodeCanvas />
-    
         <div className="h-3 w-3 animate-pulse rounded-full bg-[#F5C542]" />
         <p className="text-sm text-[#F5C542]">
           {message.slice(0,visibleCount)}
