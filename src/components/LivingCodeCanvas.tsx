@@ -17,6 +17,12 @@ export default function LivingCodeCanvas() {
 
         let cursorVisible = true;
         let activeFragment = 0;
+        let displayedStatus = "// listening for signal";
+        let targetStatus = displayedStatus;
+
+        let typingPhase: "idle" | "deleting" | "typing" = "idle";
+        let typingTimer = 0;
+
         const pointer = {
             x: -100,
             y: -100,
@@ -65,7 +71,45 @@ export default function LivingCodeCanvas() {
 
         const updateAnimation = (deltaTime: number) => {
             const rect = canvas.getBoundingClientRect();
+
+            const signalDetected =
+                pointer.x >= 0 &&
+                pointer.x <= rect.width &&
+                pointer.y >= 0 &&
+                pointer.y <= rect.height;
             
+            const nextStatus = signalDetected
+                ? "// signal detected"
+                : "// listening for signal";
+
+            if (nextStatus !== targetStatus) {
+                targetStatus = nextStatus;
+                typingPhase = "deleting";
+                typingTimer = 0;
+            }
+
+            if (typingPhase !== "idle"){
+                typingTimer += deltaTime;
+
+                const characterDelay = typingPhase === "deleting" ? 25 : 55;
+
+                if (typingTimer >= characterDelay) { 
+                    typingTimer -= characterDelay;
+
+                    if(typingPhase == "deleting") {
+                        displayedStatus = displayedStatus.slice(0, -1);
+
+                        if(displayedStatus.length == 0) {
+                            typingPhase = "typing";
+                        }
+                    } else if (typingPhase === "typing") {
+                        displayedStatus = targetStatus.slice(
+                            0, displayedStatus.length + 1
+                        );
+                    }
+                } 
+            }
+
             const columns = rect.width >= 850 ? 2 : 1;
             
             const rows = Math.max(
@@ -179,30 +223,26 @@ export default function LivingCodeCanvas() {
             ctx.restore();
         };
         
+
         const drawStatus = () => {
-            ctx.clearRect(24, 74, 280,44);
+            ctx.clearRect(24, 74, 280, 44);
 
             ctx.save();
 
-            ctx.font ='12px monospace';
+            ctx.font = "12px monospace";
             ctx.fillStyle = "#F5C542";
+
+            const text = displayedStatus;
+
+            // Apply the fade animation to the status message
             ctx.globalAlpha = 0.45;
-
-            const rect = canvas.getBoundingClientRect();
-
-            const signalDetected =
-                pointer.x >= 0 &&
-                pointer.x <= rect.width &&
-                pointer.y >= 0 &&
-                pointer.y <= rect.height;
-
-            const text = signalDetected ? "// signal detected" : "// listening for signal";
 
             ctx.fillText(
                 text + (cursorVisible ? "_" : " "),
                 24,
                 92
             );
+
 
             ctx.fillText(
                 `// pointer: ${Math.round(pointer.x)}, ${Math.round(pointer.y)}`,
@@ -211,7 +251,7 @@ export default function LivingCodeCanvas() {
             );
 
             ctx.restore();
-        }
+        };
 
         const handlePointerMove = (event: PointerEvent) => {
             const rect = canvas.getBoundingClientRect();
