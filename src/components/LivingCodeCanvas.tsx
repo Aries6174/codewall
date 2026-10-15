@@ -3,7 +3,13 @@
 
 import { useEffect, useRef } from "react";
 
-export default function LivingCodeCanvas() {
+type LivingCodeCanvasProps = {
+    onSignalChange: (detected: boolean) => void;
+}
+
+export default function LivingCodeCanvas({
+    onSignalChange,
+}: LivingCodeCanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -17,10 +23,11 @@ export default function LivingCodeCanvas() {
 
         let cursorVisible = true;
         let activeFragment = 0;
+        let previousSignalDetected = false;
         let displayedStatus = "// listening for signal";
         let targetStatus = displayedStatus;
 
-        let typingPhase: "idle" | "deleting" | "typing" = "idle";
+        let typingPhase: "idle" | "deleting" | "pausing" | "typing" = "idle";
         let typingTimer = 0;
 
         const pointer = {
@@ -77,6 +84,11 @@ export default function LivingCodeCanvas() {
                 pointer.x <= rect.width &&
                 pointer.y >= 0 &&
                 pointer.y <= rect.height;
+
+            if (signalDetected !== previousSignalDetected) {
+                previousSignalDetected = signalDetected;
+                onSignalChange(signalDetected);
+            }
             
             const nextStatus = signalDetected
                 ? "// signal detected"
@@ -84,28 +96,44 @@ export default function LivingCodeCanvas() {
 
             if (nextStatus !== targetStatus) {
                 targetStatus = nextStatus;
-                typingPhase = "deleting";
+                
+                if (displayedStatus === targetStatus) {
+                    typingPhase = "idle";
+                } else if (displayedStatus.length > 3){
+                    typingPhase = "deleting";
+                } else {
+                    typingPhase = "pausing";
+                }
+
                 typingTimer = 0;
             }
 
             if (typingPhase !== "idle"){
                 typingTimer += deltaTime;
 
-                const characterDelay = typingPhase === "deleting" ? 25 : 55;
+                const characterDelay = typingPhase === "deleting" ? 25 : typingPhase === "pausing" ? 200 : 55;
 
                 if (typingTimer >= characterDelay) { 
                     typingTimer -= characterDelay;
 
-                    if(typingPhase == "deleting") {
+                    if(typingPhase === "deleting") {
                         displayedStatus = displayedStatus.slice(0, -1);
 
-                        if(displayedStatus.length == 0) {
-                            typingPhase = "typing";
+                        if(displayedStatus.length <= 3) {
+                            displayedStatus = "// ";
+                            typingPhase = "pausing";
+                            typingTimer = 0;
                         }
                     } else if (typingPhase === "typing") {
                         displayedStatus = targetStatus.slice(
                             0, displayedStatus.length + 1
                         );
+
+                        if (displayedStatus === targetStatus) {
+                            typingPhase = "idle";
+                        }
+                    } else if (typingPhase === "pausing") {
+                        typingPhase = "typing";
                     }
                 } 
             }
@@ -321,7 +349,7 @@ export default function LivingCodeCanvas() {
                 cancelAnimationFrame(animationFrameId);
             }
         };
-    }, []);
+    }, [onSignalChange]);
 
     return (
         <canvas
