@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import CodeCanvas from "@/components/CodeCanvas";
 import LivingCodeCanvas from "@/components/LivingCodeCanvas";
 import IntroTopBar from "@/components/IntroTopBar";
+import IntroTerminal from "@/components/IntroTerminal";
 
 export default function Home() {
   // States
@@ -81,6 +82,8 @@ export default function Home() {
 
             {/* Interactive code editor */}
             <CodeCanvas />
+
+            <IntroTerminal />
 
             {/* Status indicator */}
             <div className="h-3 w-3 animate-pulse rounded-full bg-[#F5C542]" />
