@@ -8,8 +8,12 @@ import LivingCodeCanvas from "@/components/LivingCodeCanvas";
 import IntroTopBar from "@/components/IntroTopBar";
 import IntroTerminal from "@/components/IntroTerminal";
 
+type PatchPhase = "idle" | "running" | "complete";
+
 export default function Home() {
   // States
+  const [terminalCommand, setTerminalCommand] = useState("");
+  const [patchPhase, setPatchPhase] = useState<PatchPhase>("idle");
   const [visibleCount, setVisibleCount] = useState(0);
   const [hasEntered, setHasEntered] = useState(false);
   const [signalDetected, setSignalDetected] = useState(false);
@@ -81,9 +85,13 @@ export default function Home() {
             </p>
 
             {/* Interactive code editor */}
-            <CodeCanvas />
+            <CodeCanvas
+                activeCommand={terminalCommand}
+                patchPhase={patchPhase}
+                onPatchPhaseChange={setPatchPhase}
+            />
 
-            <IntroTerminal />
+            <IntroTerminal onCommand={setTerminalCommand}/>
 
             {/* Status indicator */}
             <div className="h-3 w-3 animate-pulse rounded-full bg-[#F5C542]" />

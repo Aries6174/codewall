@@ -2,15 +2,37 @@
 
 import { useEffect, useRef } from "react";
 
-export default function CodeCanvas(){
+type PatchPhase = "idle" | "running" | "complete";
+
+type CodeCanvasProps = {
+    activeCommand: string;
+    patchPhase: PatchPhase;
+    onPatchPhaseChange: (phase: PatchPhase) => void;
+};
+
+export default function CodeCanvas({
+    activeCommand,
+    patchPhase,
+    onPatchPhaseChange
+}: CodeCanvasProps){
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const footerInfoRef = useRef<HTMLSpanElement>(null);
+    const commandRef = useRef(activeCommand);
+    const patchRequestRef = useRef(false);
 
     const lineHeight = 18;
     const fontSize = 12;
     const topPadding = 18;
     const gutterRight =  38;
     const codeStartX =  54;
+
+    useEffect(() => {
+        commandRef.current = activeCommand;
+
+        if (activeCommand === "run editor.patch"){
+            patchRequestRef.current = true;
+        }
+    }, [activeCommand]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -189,6 +211,7 @@ export default function CodeCanvas(){
         let typingText = typingOptions[0]; 
         let nextTypingIndex = 0;
         let isEditing = false;
+        let isTerminalPatch = false;
         let typedCount = 0;
         let lastManualScrollTime = Date.now();
         let autoPauseUntil = 0;
@@ -297,6 +320,10 @@ export default function CodeCanvas(){
         const autoScrollInterval = window.setInterval(() => {
             const now = Date.now();
 
+            if (commandRef.current === "inspect src/developer.ts"){
+                return;
+            }
+
             if (isEditing) {
                 return;
             }
@@ -332,10 +359,22 @@ export default function CodeCanvas(){
         let glitchInterval: number | undefined;
         let glitchStartTimeout: number | undefined;
 
-        const startEditing = () => {
+        const startEditing = (forced = false) => {
+            if (isEditing) return;
+            isTerminalPatch = forced;
+
+            if (isTerminalPatch) {
+                onPatchPhaseChange("running");
+            }
+
             const idleTime = Date.now() - lastManualScrollTime;
 
-            if (idleTime < 5000) {
+            if (!forced && idleTime < 5000) {
+                typingStartTimeout = window.setTimeout(startEditing, 1000);
+                return;
+            }
+
+            if (!forced && commandRef.current === "inspect src/developer.ts") {
                 typingStartTimeout = window.setTimeout(startEditing, 1000);
                 return;
             }
@@ -394,6 +433,11 @@ export default function CodeCanvas(){
                         ) % replacementOptions.length;
 
                         isEditing = false;
+
+                        if (isTerminalPatch) {
+                            onPatchPhaseChange("complete");
+                            isTerminalPatch = false;
+                        }
 
                         lastManualScrollTime = Date.now();
 
@@ -472,6 +516,12 @@ export default function CodeCanvas(){
 
                                 typedCount = 0;
                                 isEditing = false;
+
+                                if (isTerminalPatch) {
+                                    onPatchPhaseChange("complete");
+                                    isTerminalPatch = false;
+                                }
+
                                 lastManualScrollTime = Date.now();
 
                                 lastManualScrollTime = Date.now();
@@ -507,6 +557,14 @@ export default function CodeCanvas(){
         typingStartTimeout = window.setTimeout(startEditing, 7000);
 
         const animate = (time: number) => {
+            if(patchRequestRef.current && !isEditing){
+                patchRequestRef.current = false;
+
+                window.clearTimeout(typingStartTimeout);
+
+                startEditing(true);
+            }
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (hoveredRow !== null){
@@ -603,7 +661,7 @@ export default function CodeCanvas(){
             canvas.removeEventListener("mouseleave", handleMouseLeave);
             canvas.removeEventListener("wheel", handleWheel);
         };
-    }, []);
+    }, [onPatchPhaseChange]);
 
     
     return (
@@ -619,8 +677,16 @@ export default function CodeCanvas(){
                     </span>
                 </div>
 
-                <span className="font-mono text-[10px] tracking-wide text-[#92958B]">
-                    LOOP MODE — ACTIVE
+                <span className="font-mono text-[10px] tracking-wide text-[#92958B]">    
+                    {patchPhase === "running"
+                        ? "PATCH MODE — RUNNING"
+                        : patchPhase === "complete"
+                            ? "PATCH MODE — COMPLETE"
+                            : activeCommand === "inspect src/developer.ts"
+                                ? "INSPECT MODE — ACTIVE"
+                                : activeCommand === "run editor.patch"
+                                    ? "PATCH MODE — REQUESTED"
+                                    : "LOOP MODE — ACTIVE"}
                 </span>
             </div>
             <canvas

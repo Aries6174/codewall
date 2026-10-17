@@ -10,9 +10,20 @@ const commands = [
     {
         input: "system status",
         output: "Editor online. Autonomous mode active."
+    },
+    {
+        input: "run editor.patch",
+        output: "Source patch requested."
     }
 ];
-export default function IntroTerminal() {
+
+type IntroTerminalProps = {
+    onCommand: (command: string) => void;
+};
+
+export default function IntroTerminal({
+    onCommand
+}: IntroTerminalProps) {
     const terminalOutputRef = useRef<HTMLDivElement>(null);
     
     const [commandIndex, setCommandIndex] = useState(0);
@@ -27,10 +38,12 @@ export default function IntroTerminal() {
     useEffect(() => {
         if (!currentCommand) return;
 
+        const typingDelay = commandIndex === 1 && visibleCount === 0? 6500 : 90;
+
         if (visibleCount < currentCommand.input.length) {
             const timeout = window.setTimeout(() => {
                 setVisibleCount((count) => count + 1);
-            }, 90);
+            }, typingDelay);
 
             return () => window.clearTimeout(timeout);
         }
@@ -41,12 +54,14 @@ export default function IntroTerminal() {
                 currentCommand
             ]);
 
+            onCommand(currentCommand.input);
+
             setCommandIndex((index) => index + 1);
             setVisibleCount(0);
         }, 800);
 
         return () => window.clearTimeout(timeout);
-    }, [commandIndex, visibleCount, currentCommand]);
+    }, [commandIndex, visibleCount, currentCommand, onCommand]);
 
     useEffect(() => {
         const terminal = terminalOutputRef.current;
