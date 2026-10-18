@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { editorSequence } from "@/data/editorFiles"
 
 type PatchPhase = "idle" | "running" | "complete";
 
@@ -8,29 +9,47 @@ type CodeCanvasProps = {
     activeCommand: string;
     patchPhase: PatchPhase;
     onPatchPhaseChange: (phase: PatchPhase) => void;
+    onNavigationComplete: () => void;
 };
 
 export default function CodeCanvas({
     activeCommand,
     patchPhase,
-    onPatchPhaseChange
+    onPatchPhaseChange,
+    onNavigationComplete
 }: CodeCanvasProps){
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const footerInfoRef = useRef<HTMLSpanElement>(null);
+    const filenameRef = useRef<HTMLSpanElement>(null);
     const commandRef = useRef(activeCommand);
     const patchRequestRef = useRef(false);
+    const navigationTargetRef = useRef<number | null>(null);
 
-    const lineHeight = 18;
-    const fontSize = 12;
-    const topPadding = 18;
-    const gutterRight =  38;
-    const codeStartX =  54;
+    const lineHeight = 12;
+    const fontSize = 10;
+    const topPadding = 12;
+    const gutterRight = 30;
+    const codeStartX = 43;
+    const charWidth = 6;
 
     useEffect(() => {
         commandRef.current = activeCommand;
 
         if (activeCommand === "run editor.patch"){
             patchRequestRef.current = true;
+        }
+
+        if (activeCommand.startsWith("goto ")) {
+            const filename = activeCommand.slice(5).trim();
+
+            const targetIndex = editorSequence.findIndex((line) =>
+                line.fileName === filename &&
+                line.lineNumber === 1
+            );
+            
+            if (targetIndex !== -1) {
+                navigationTargetRef.current = targetIndex;
+            }
         }
     }, [activeCommand]);
 
@@ -40,6 +59,7 @@ export default function CodeCanvas({
         if (!canvas) return;
 
         const ctx = canvas.getContext("2d");
+        const canvasFont = getComputedStyle(canvas).fontFamily;
 
         if (!ctx) return;
 
@@ -50,92 +70,7 @@ export default function CodeCanvas({
             y: -100
         };
 
-
-        const sourceCode = `
-        type Vector2D = {
-            x: number;
-            y: number;
-        };
-
-        type Particle = {
-            position: Vector2D;
-            origin: Vector2D;
-            velocity: Vector2D;
-        };
-
-        // Mouse interaction settings
-        const config = {
-            radius: 45,
-            maxPush: 15,
-            easing: 0.1,
-            friction: 0.85
-        };
-
-        const mouse: Vector2D = {
-            x: -100,
-            y: -100
-        };
-
-        function getDistance(
-            a: Vector2D,
-            b: Vector2D
-        ): number {
-            const dx = a.x - b.x;
-            const dy = a.y - b.y;
-
-            return Math.sqrt(
-                dx * dx + dy * dy
-            );
-        }
-
-        function updateParticle(
-            particle: Particle
-        ): void {
-            const distance = getDistance(
-                particle.origin,
-                mouse
-            );
-
-            let targetX = particle.origin.x;
-            let targetY = particle.origin.y;
-
-            if (
-                distance < config.radius &&
-                distance > 0
-            ) {
-                const force =
-                    (config.radius - distance) /
-                    config.radius;
-
-                const dx = particle.origin.x - mouse.x;
-                const dy = particle.origin.y - mouse.y;
-
-                targetX +=
-                    (dx / distance) *
-                    force * config.maxPush;
-
-                targetY +=
-                    (dy / distance) *
-                    force * config.maxPush;
-            }
-
-            particle.velocity.x +=
-                (targetX - particle.position.x) *
-                config.easing;
-
-            particle.velocity.y +=
-                (targetY - particle.position.y) *
-                config.easing;
-
-            particle.velocity.x *= config.friction;
-            particle.velocity.y *= config.friction;
-
-            particle.position.x += particle.velocity.x;
-            particle.position.y += particle.velocity.y;
-        }
-        `;
-
-        const codeLines = sourceCode.trim().split("\n").map((line) => line.replace(/^ {8}/, ""));
+        const codeLines = editorSequence.map((line) => line.text);
 
         const getLineColors = (line: string) => {
             const colors = Array(line.length).fill("#E6DDC9");
@@ -183,6 +118,9 @@ export default function CodeCanvas({
         };
 
         let firstVisibleLine = 0;
+        let scrollOffset = 0;
+        let scrollVelocity = 0;
+        let lastFrameTime = 0;
         let editLineIndex = 6;
         let editColumn = codeLines[editLineIndex].length;
         const typingOptions = [
@@ -221,19 +159,29 @@ export default function CodeCanvas({
         const updateEditorInfo = () => {
             if (!footerInfoRef.current) return;
             
-            const totalLines = codeLines.length;
-            const currentLine = ((firstVisibleLine + (hoveredRow ?? 0)) % totalLines) + 1;
+            const activeLine = editorSequence[firstVisibleLine];
 
-            const percentage = totalLines > 1 ? ((currentLine - 1) / (totalLines - 1)) * 100 : 100;
+            if (filenameRef.current) {
+                filenameRef.current.textContent = activeLine.fileName;
+            }
 
-            const columnInfo = hoveredColumn != null ? `, Col ${hoveredColumn + 1}` : ` / ${totalLines}`;
+            const currentIndex = (firstVisibleLine + (hoveredRow ?? 0)) % codeLines.length;
 
-            footerInfoRef.current.textContent = `Ln ${currentLine}${columnInfo} · ${percentage.toFixed(1)}%`;
+            const currentLine = editorSequence[currentIndex];
+
+            const percentage = currentLine.totalLines > 1
+                ? ((currentLine.lineNumber - 1)) /
+                    (currentLine.totalLines - 1) * 100
+                : 100;
+
+            const columnInfo = hoveredColumn != null ? `, Col ${hoveredColumn + 1}` : ` / ${currentLine.totalLines}`;
+
+            footerInfoRef.current.textContent = `Ln ${currentLine.lineNumber}${columnInfo} · ${percentage.toFixed(1)}%`;
         };
 
         updateEditorInfo();
 
-        const visibleLineCount = Math.floor((canvas.height) / lineHeight);
+        const visibleLineCount = Math.ceil((canvas.height) / lineHeight) + 1;
 
         const getVisibleLines = (start: number) => {
             return Array.from(
@@ -268,17 +216,22 @@ export default function CodeCanvas({
 
             lastManualScrollTime = Date.now();
 
-            const direction = Math.sign(event.deltaY);
+            const delta =
+                event.deltaMode === 1
+                    ? event.deltaY * lineHeight
+                    : event.deltaMode === 2
+                        ? event.deltaY * canvas.height
+                        : event.deltaY;
 
-            firstVisibleLine = (
-                firstVisibleLine + direction + codeLines.length
-            ) % codeLines.length;
+            scrollVelocity += delta * 0.12;
+
+            scrollVelocity = Math.max(
+                -30,
+                Math.min(30, scrollVelocity)
+            );
 
             hoveredRow = null;
             hoveredColumn = null;
-
-            updateVisibleLines();
-            updateEditorInfo();
         };
 
         const handleMouseMove = (event: MouseEvent) => {
@@ -290,7 +243,7 @@ export default function CodeCanvas({
 
             const row = Math.floor((mouse.y - (topPadding - fontSize)) / lineHeight);
 
-            const col = Math.floor((mouse.x - codeStartX) / 8);
+            const col = Math.floor((mouse.x - codeStartX) / charWidth);
 
             if (row >= 0 && row < visibleLines.length) {
                 hoveredRow = row;
@@ -319,6 +272,10 @@ export default function CodeCanvas({
 
         const autoScrollInterval = window.setInterval(() => {
             const now = Date.now();
+
+            if (navigationTargetRef.current !== null){
+                return;
+            }
 
             if (commandRef.current === "inspect src/developer.ts"){
                 return;
@@ -477,7 +434,11 @@ export default function CodeCanvas({
 
             if (targetRow === undefined) {
                 isEditing = false;
-                typingStartTimeout = window.setTimeout(startEditing, 2000);
+
+                typingStartTimeout = window.setTimeout(() => {
+                    startEditing(forced);
+                }, 2000);
+
                 return;
             }
             editLineIndex = (firstVisibleLine + targetRow) % codeLines.length;
@@ -524,8 +485,6 @@ export default function CodeCanvas({
 
                                 lastManualScrollTime = Date.now();
 
-                                lastManualScrollTime = Date.now();
-
                                 typingStartTimeout = window.setTimeout(startEditing, 12000);
                                 
                                 return;
@@ -557,7 +516,70 @@ export default function CodeCanvas({
         typingStartTimeout = window.setTimeout(startEditing, 7000);
 
         const animate = (time: number) => {
-            if(patchRequestRef.current && !isEditing){
+            const frameDelta = lastFrameTime
+                ? Math.min((time - lastFrameTime) / 16.67, 2)
+                : 1;
+
+            lastFrameTime = time;
+
+            const target = navigationTargetRef.current;
+
+            if (target !== null && !isEditing) {
+                const distance =
+                    (target - firstVisibleLine + codeLines.length)
+                    % codeLines.length;
+
+                if (distance === 0) {
+                    scrollOffset = 0;
+                    scrollVelocity = 0;
+
+                    navigationTargetRef.current = null;
+                    lastManualScrollTime = Date.now();
+                    autoPauseUntil = Date.now() + 3000;
+
+                    updateVisibleLines();
+                    updateEditorInfo();
+
+                    onNavigationComplete();
+                } else {
+                    firstVisibleLine =
+                        (firstVisibleLine + 1) % codeLines.length;
+
+                    scrollVelocity = 0;
+
+                    updateVisibleLines();
+                    updateEditorInfo();
+                }
+            }
+
+            if (Math.abs(scrollVelocity) > 0.05) {
+                scrollOffset += scrollVelocity * frameDelta;
+
+                while (scrollOffset >= lineHeight) {
+                    scrollOffset -= lineHeight;
+                    firstVisibleLine =
+                        (firstVisibleLine + 1) % codeLines.length;
+
+                    updateVisibleLines();
+                    updateEditorInfo();
+                }
+
+                while (scrollOffset < 0) {
+                    scrollOffset += lineHeight;
+                    firstVisibleLine =
+                        (firstVisibleLine - 1 + codeLines.length)
+                        % codeLines.length;
+
+                    updateVisibleLines();
+                    updateEditorInfo();
+                }
+
+                scrollVelocity *= Math.pow(0.86, frameDelta);
+            } else {
+                scrollVelocity = 0;
+            }
+
+            if(patchRequestRef.current && !isEditing && navigationTargetRef.current === null) {
                 patchRequestRef.current = false;
 
                 window.clearTimeout(typingStartTimeout);
@@ -575,28 +597,28 @@ export default function CodeCanvas({
                 ctx.fillRect(0, highlightY, canvas.width, lineHeight);
             }
 
-            ctx.font = `${fontSize}px monospace`;
+            ctx.font = `${fontSize}px ${canvasFont}`;
             ctx.fillStyle = "#92958B";
             ctx.textAlign = "right";
 
-            for (let row = 0; row < visibleLines.length; row++) {     
-                const lineNumber = String(
-                    ((firstVisibleLine + row) % codeLines.length) + 1
-                );
+            for (let row = 0; row < visibleLines.length; row++) {  
+                const lineIndex = (firstVisibleLine + row) % codeLines.length;
+
+                const lineNumber = String(editorSequence[lineIndex].lineNumber);
 
                 const y = topPadding + row * lineHeight;
 
                 ctx.fillText(lineNumber, gutterRight, y);
             }
 
-            ctx.font = `${fontSize}px monospace`;
+            ctx.font = `${fontSize}px ${canvasFont}`;
             ctx.textAlign = "left";
   
             for (let row = 0; row < characters.length; row++) {
                 for (let col = 0; col < characters[row].length; col++) {
                     const character = characters[row][col];
 
-                    const x = codeStartX + col * 8;
+                    const x = codeStartX + col * charWidth;
                     const y = topPadding + row * lineHeight;
 
                     ctx.fillStyle = characterColors[row][col];
@@ -661,19 +683,19 @@ export default function CodeCanvas({
             canvas.removeEventListener("mouseleave", handleMouseLeave);
             canvas.removeEventListener("wheel", handleWheel);
         };
-    }, [onPatchPhaseChange]);
+    }, [onPatchPhaseChange, onNavigationComplete]);
 
     
     return (
-        <div className="w-full max-w-[620px] bg-[#0B0C0B]">
+        <div className="w-full bg-[#0B0C0B]">
 
             
-            <div className="flex items-center justify-between px-3 py-3">
+            <div className="flex items-center justify-between px-2 py-0.5">
                 <div className="flex items-center gap-2">
                     <span className="h-[5px] w-[5px] rounded-full bg-[#F5C542]" />
 
-                    <span className="font-mono text-xs text-[#E6DDC9]">
-                        src / developer.ts
+                    <span className="font-mono text-[10px] text-[#E6DDC9]">
+                        src / <span ref={filenameRef}>developer.ts</span>
                     </span>
                 </div>
 

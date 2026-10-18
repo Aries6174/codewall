@@ -32,7 +32,7 @@ export default function AboutPanel() {
           </p>
 
           <p className="mt-2 text-xs leading-5 text-[#92958B]">
-            I'm a recent Computer and Information Science graduate
+            I&apos;m a recent Computer and Information Science graduate
             who enjoys coding, designing interfaces, and building
             useful systems. I like turning ideas into working
             projects and learning new technologies along the way.
@@ -40,7 +40,7 @@ export default function AboutPanel() {
 
           <p className="mt-2 text-xs leading-5 text-[#92958B]">
             Outside of coding, I enjoy creative projects, art, and
-            organizing information. I'm always looking for ways to
+            organizing information. I&apos;m always looking for ways to
             improve my skills and build things that solve real
             problems.
           </p>
