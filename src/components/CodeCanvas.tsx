@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { editorSequence } from "@/data/editorFiles"
 import { glitchCharacters } from "@/data/glitchCharacters"
 import { getRandomDeveloperQuote } from "@/data/developerQuotes";
+import { createTypingFrames } from "@/utils/realisticTyping";
 
 type PatchPhase = "idle" | "running" | "complete";
 
@@ -190,11 +191,6 @@ export default function CodeCanvas({
         const createQuote = () => {
             return `// ${getRandomDeveloperQuote()}`;
         };
-        const typingOptions = [
-            " // live",
-            " // synced",
-            " // updated",
-        ];
 
         const replacementOptions = [{
             search: "radius: 45",
@@ -214,11 +210,8 @@ export default function CodeCanvas({
         },];
         let nextReplacementIndex = 0;
         const replacementStates = replacementOptions.map(() => false);
-        let typingText = typingOptions[0]; 
-        let nextTypingIndex = 0;
         let isEditing = false;
         let isTerminalPatch = false;
-        let typedCount = 0;
         let lastManualScrollTime = Date.now();
         let autoPauseUntil = 0;
         let hoveredRow: number | null = null;
@@ -452,17 +445,31 @@ export default function CodeCanvas({
                 quoteText = "";
 
                 const fullQuote = createQuote();
-                let characterIndex = 0;
+                const typingFrames = createTypingFrames(fullQuote, 45, 0.08);
 
-                typingInterval = window.setInterval(() => {
+                let frameIndex = 0;
+
+                const typeNextFrame = () => {
                     if (isPausedRef.current) return;
 
-                    characterIndex++;
-                    quoteText = fullQuote.slice(0, characterIndex);
+                    if (frameIndex < typingFrames.length) {
+                        const frame = typingFrames[frameIndex];
 
-                    if (characterIndex >= fullQuote.length) {
-                        window.clearInterval(typingInterval);
+                        typingStartTimeout = window.setTimeout(()=> {
+                            if (isPausedRef.current) {
+                                typeNextFrame();
+                                return;
+                            }
 
+                            quoteText = frame.text;
+                            frameIndex++;
+                            typeNextFrame();
+                        }, isPausedRef.current ? 100 : frame.delay);
+
+                        return;
+                    }
+
+                    if (frameIndex >= typingFrames.length) {
                         glitchStartTimeout = window.setTimeout(() => {
                             let glitchFrame = 0;
 
@@ -498,7 +505,9 @@ export default function CodeCanvas({
                             }, 70);
                         }, 3000);
                     }
-                }, 65);
+                };
+
+                typeNextFrame();
 
                 return;
             }
@@ -570,109 +579,24 @@ export default function CodeCanvas({
                         return;
                     }
 
-                    const scrambled = Array.from(
-                        { length: typingText.length },
-                        () => glitchCharacters[Math.floor(Math.random() * glitchCharacters.length)]
-                    ).join("");
                 }, 70);
 
                 return;
             }
 
-            typingText = typingOptions[nextTypingIndex];
+            isEditing = false;
 
-            const candidateRows = [5, 6, 4, 7, 3, 8];
-
-            const targetRow = candidateRows.find((row) => {
-                const line = visibleLines[row];
-
-                return (
-                    line !== undefined &&
-                    line.trim().length > 0 &&
-                    line.trim() !== "}" &&
-                    line.trim() !== "};" &&
-                    line.length + typingText.length < 65
-                );
-            });
-
-            if (targetRow === undefined) {
-                isEditing = false;
-
-                typingStartTimeout = window.setTimeout(() => {
-                    startEditing(forced);
-                }, 2000);
-
-                return;
+            if (isTerminalPatch) {
+                onPatchPhaseChange("complete");
+                isTerminalPatch = false;
             }
-            editLineIndex = (firstVisibleLine + targetRow) % codeLines.length;
 
-            editColumn = codeLines[editLineIndex].length;
+            lastManualScrollTime = Date.now();
 
-            nextTypingIndex = (nextTypingIndex + 1) % typingOptions.length;
-
-            hoveredRow = null;
-            hoveredColumn = null;
-
-            updateVisibleLines();
-            updateEditorInfo();
-
-            typingInterval = window.setInterval(() => {
-                if (typedCount >= typingText.length) {
-                    window.clearInterval(typingInterval);
-
-                    glitchStartTimeout = window.setTimeout(() => {
-                        const originalLine = codeLines[editLineIndex];
-                        const baseCode = originalLine.slice(0, originalLine.length - typingText.length);   
-
-                        let glitchFrame = 0;
-
-                        glitchInterval = window.setInterval(() => {
-                            glitchFrame++;
-
-                            if (glitchFrame >= 8) {
-                                window.clearInterval(glitchInterval);
-
-                                codeLines[editLineIndex] = baseCode;
-                                editColumn = baseCode.length;
-
-                                updateVisibleLines();
-
-                                typedCount = 0;
-                                isEditing = false;
-
-                                if (isTerminalPatch) {
-                                    onPatchPhaseChange("complete");
-                                    isTerminalPatch = false;
-                                }
-
-                                lastManualScrollTime = Date.now();
-
-                                typingStartTimeout = window.setTimeout(startEditing, 12000);
-                                
-                                return;
-                            }
-
-                            const scrambled = Array.from(
-                                { length: typingText.length },
-                                () => glitchCharacters[Math.floor(Math.random() * glitchCharacters.length)]).join("");
-
-                                codeLines[editLineIndex] = baseCode + scrambled;
-
-                                updateVisibleLines();
-                        }, 50);
-                    }, 1500);
-
-                    return;
-                }
-
-                codeLines[editLineIndex] += typingText[typedCount];
-
-                typedCount++;
-
-                editColumn = codeLines[editLineIndex].length;
-
-                updateVisibleLines();
-            }, 150);
+            typingStartTimeout = window.setTimeout(
+                startEditing,
+                12000
+            )
         };
 
         typingStartTimeout = window.setTimeout(startEditing, 7000);

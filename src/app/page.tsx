@@ -219,105 +219,91 @@ export default function Home() {
 
           {/* Central intro content */}
           <div
-            className={`relative z-10 flex w-full flex-col items-center gap-2 px-4
-              transition-all duration-700 ease-in-out
+            className={`relative z-10 grid w-full max-w-[1250px] grid-cols-1 items-start gap-6 px-4 lg:grid-cols-[minmax(0,700px)_minmax(0,1fr)] lg:gap-10 transition-all duration-700 ease-in-out 
               ${
                 isExiting
                   ? "scale-95 opacity-0 blur-sm"
                   : "scale-100 opacity-100 blur-0"
               }`}
           >
-            {/* System identification */}
-            <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.2em]">
-              <span className="font-medium text-[#E6DDC9]">
-                ADRIAN.JS
-              </span>
-
-              <span className="text-[#494538]">/</span>
-
-              <span
-                className={
-                  signalDetected
-                  ? "text-[#F5C542]"
-                  : "text-[#92958B]"
-                }
-              >
-                {signalDetected ? "SIGNAL_RECEIVED" : "SYSTEM_001"}
-              </span>
-            </div>
 
             {/* Interactive code editor */}
-            <div className="relative w-full max-w-[700px] overflow-hidden">
+            <div className="flex min-w-0 flex-col gap-4">
 
-              {/* Primary editor - stays in place */}
-              <CodeCanvas
-                activeCommand={terminalCommand}
-                patchPhase={patchPhase}
-                onPatchPhaseChange={handlePatchPhaseChange}
-                onNavigationComplete={finishNavigation}
-                isPaused={isSplit}
-              />
+              {/* CodeCanvas container */}
+              <div className="relative w-full max-w-[700px] overflow-hidden">
 
-              {/* Secondary editor - occupies right half */}
-              {isSplit && (
-                <div
-                  className={`absolute inset-y-0 right-0 z-10 w-1/2 overflow-hidden
-                    border-l border-[#494538] bg-[#0B0C0B]
-                    transition-[transform,opacity] duration-500 ease-in-out
-                    ${
-                      secondaryVisible
-                        ? "translate-x-0 opacity-100"
-                        : "translate-x-full opacity-0"
-                    }`}
-                >
-                  <SecondaryEditorPane
-                    onEditingComplete={finishSecondaryEditing}
-                    onExecutionComplete={finishSecondaryExecution}
-                    runRequested={
-                      secondaryCommand === "editor.run preview.ts"
-                    }
-                    isVisible={secondaryVisible}
-                  />
-                </div>
-              )}
+                <CodeCanvas
+                  activeCommand={terminalCommand}
+                  patchPhase={patchPhase}
+                  onPatchPhaseChange={handlePatchPhaseChange}
+                  onNavigationComplete={finishNavigation}
+                  isPaused={isSplit}
+                />
 
-            </div>
+                {/* Secondary editor overlays CodeCanvas */}
+                {isSplit && (
+                  <div
+                    className={`absolute inset-y-0 right-0 z-10 w-1/2 overflow-hidden
+                      border-l border-[#494538] bg-[#0B0C0B]
+                      transition-[transform,opacity] duration-500 ease-in-out
+                      ${
+                        secondaryVisible
+                          ? "translate-x-0 opacity-100"
+                          : "translate-x-full opacity-0"
+                      }`}
+                  >
+                    <SecondaryEditorPane
+                      onEditingComplete={finishSecondaryEditing}
+                      onExecutionComplete={finishSecondaryExecution}
+                      runRequested={
+                        secondaryCommand === "editor.run preview.ts"
+                      }
+                      isVisible={secondaryVisible}
+                    />
+                  </div>
+                )}
 
-            {/* Terminal */}
-            <div className="w-full max-w-[700px]">
-              <IntroTerminal
-                ref={terminalRef}
-                onCommand={handleTerminalCommand}
-                patchPhase={patchPhase}
-                onEnterSystem={enterSystem}
-                secondaryEditComplete={secondaryEditComplete}
-                secondaryExecutionComplete={secondaryExecutionComplete}
-                isVisitorIdle={isVisitorIdle}
-              />
+              </div>
+
+              {/* IntroTerminal stays BELOW CodeCanvas */}
+              <div className="w-full max-w-[700px]">
+                <IntroTerminal
+                  ref={terminalRef}
+                  onCommand={handleTerminalCommand}
+                  patchPhase={patchPhase}
+                  onEnterSystem={enterSystem}
+                  secondaryEditComplete={secondaryEditComplete}
+                  secondaryExecutionComplete={secondaryExecutionComplete}
+                  isVisitorIdle={isVisitorIdle}
+                />
+              </div>
+
             </div>
 
             {/* Systerm entry section */}
-            <div className="mt-5 flex items-center gap-2">
+            <div className="flex min-w-0 flex-col items-start gap-2">
+              <div className="mt-5 flex items-center gap-2">
 
-              {/* System status */}
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 animate rounded-full bg-[#F5C542]" />
+                {/* System status */}
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 animate rounded-full bg-[#F5C542]" />
 
-                <p className = "font-mono text-[11px] text-[#F5C542]">
-                  {message.slice(0, visibleCount)}
-                  <span className="cursor-blink">_</span>
-                </p>
+                  <p className = "font-mono text-[11px] text-[#F5C542]">
+                    {message.slice(0, visibleCount)}
+                    <span className="cursor-blink">_</span>
+                  </p>
+                </div>
+                {!hasEntered && (
+                  <button
+                  type="button"
+                  onClick={enterSystem}
+                  className="mt border border-[#494538] px-6 py-3 font-mono text-[10px] tracking-[0.2em] text-[#F5C542] transition-colors duration-300 hover:border-[#F5C542] hover:bg-[#F5C542] hover:text-[#0B0C0B]">
+                    [ ENTER SYSTEM ]
+                  </button>
+                )}
               </div>
-              {!hasEntered && (
-                <button
-                type="button"
-                onClick={enterSystem}
-                className="mt border border-[#494538] px-6 py-3 font-mono text-[10px] tracking-[0.2em] text-[#F5C542] transition-colors duration-300 hover:border-[#F5C542] hover:bg-[#F5C542] hover:text-[#0B0C0B]">
-                  [ ENTER SYSTEM ]
-                </button>
-              )}
-
-            </div>
+            </div>  
           </div>
         </>
       )}

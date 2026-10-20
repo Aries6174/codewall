@@ -1,8 +1,9 @@
 
 "use client";
 
-import { useEffect, useImperativeHandle, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { editorFiles } from "@/data/editorFiles";
+import { createTypingFrames } from "@/utils/realisticTyping";
 
 const commandGroups = {
     startup: [
@@ -104,6 +105,16 @@ export default function IntroTerminal({
         canStartIdleSequence
             ? commands[commandIndex]
             : undefined;
+
+    const typingFrames = useMemo(() => {
+        if (!currentCommand) return [];
+
+        return createTypingFrames(
+            currentCommand.input,
+            27,
+            0.08
+        );
+    }, [currentCommand]);
 
     // Cooldown before repeating idle animation
     useEffect(() => {
@@ -254,10 +265,14 @@ export default function IntroTerminal({
             return;
         }
 
-        const typingDelay =
-            commandIndex === 1 && visibleCount === 0 ? 6500 : 35;
+        if (visibleCount < typingFrames.length) {
+            const nextFrame = typingFrames[visibleCount];
 
-        if (visibleCount < currentCommand.input.length) {
+            const typingDelay =
+                commandIndex === 1 && visibleCount === 0
+                    ? 6500
+                    : nextFrame.delay;
+
             const timeout = window.setTimeout(() => {
                 if (
                     currentCommand.input === "editor.open preview.ts" &&
@@ -286,7 +301,7 @@ export default function IntroTerminal({
 
             setCommandIndex((index) => index + 1);
             setVisibleCount(0);
-        }, 450);
+        }, 300);
 
         return () => window.clearTimeout(timeout);
     }, [
@@ -405,7 +420,7 @@ export default function IntroTerminal({
                 <span>
                     {!currentCommand
                         ? "READY"
-                        : visibleCount < currentCommand.input.length
+                        : visibleCount < typingFrames.length
                             ? "TYPING"
                             : "EXECUTING"}
                 </span>
@@ -441,7 +456,7 @@ export default function IntroTerminal({
                         <span className="text-[#F5C542]">➜</span>
 
                         <span>
-                            {currentCommand.input.slice(0, visibleCount)}
+                            {typingFrames[visibleCount - 1]?.text ?? ""}
                             <span className="cursor-blink text-[#F5C542]">
                                 _
                             </span>

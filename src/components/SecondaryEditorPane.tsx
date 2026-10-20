@@ -2,7 +2,8 @@
 
 import { Fragment, useEffect, useState } from "react";
 import { editorSequence } from "@/data/editorFiles";
-import { glitchCharacters } from "@/data/glitchCharacters"
+import { glitchCharacters } from "@/data/glitchCharacters";
+import { createTypingFrames } from "@/utils/realisticTyping";
 
 type SecondaryEditorPaneProps = {
     onEditingComplete: () => void;
@@ -111,29 +112,35 @@ export default function SecondaryEditorPane({
             window.clearInterval(lineInterval);
         };
     }, [isVisible]);
-    
+
     useEffect(() => {
         if (!sourceLoaded) return;
 
-        let characterIndex = 0
-        let typingInterval: number | undefined;
+        const frames = createTypingFrames(newCode, 45, 0.08);
 
-        const startTimeout = window.setTimeout(() => {
-            typingInterval = window.setInterval(() => {
-                characterIndex++;
+        let frameIndex = 0;
+        let typingTimeout: number | undefined;
 
-                setTypedLine(newCode.slice(0, characterIndex));
+        const typeNextFrame = () => {
+            if (frameIndex >= frames.length) {
+                setTypingComplete(true);
+                return;
+            }
 
-                if (characterIndex >= newCode.length) {
-                    window.clearInterval(typingInterval);
-                    setTypingComplete(true);
-                }
-            }, 90);
-        }, 1500);
+            const frame = frames[frameIndex];
+
+            typingTimeout = window.setTimeout(() => {
+                setTypedLine(frame.text);
+                frameIndex++;
+                typeNextFrame();
+            }, frame.delay);
+        };
+
+        const startTimeout = window.setTimeout(typeNextFrame, 1500);
 
         return () => {
             window.clearTimeout(startTimeout);
-            window.clearInterval(typingInterval);
+            window.clearTimeout(typingTimeout);
         };
     }, [sourceLoaded]);
 
@@ -187,51 +194,58 @@ export default function SecondaryEditorPane({
             "}"
         ];
 
-        let lineIndex = 0;
-        let characterIndex = 0;
-        let typingInterval: number | undefined;
+        const lineFrames = codeBlock.map((line) =>
+        createTypingFrames(line, 45, 0.08)
+    );
 
-        const startTimeout = window.setTimeout(() => {
-            typingInterval = window.setInterval(() => {
-                if (lineIndex >= codeBlock.length) {
-                    window.clearInterval(typingInterval);
-                    setInsertionComplete(true);
-                    return;
-                }
+    let lineIndex = 0;
+    let frameIndex = 0;
+    let typingTimeout: number | undefined;
 
-                const currentLine = codeBlock[lineIndex];
+    const typeNextFrame = () => {
+        if (lineIndex >= lineFrames.length) {
+            setInsertionComplete(true);
+            return;
+        }
 
-                if (characterIndex < currentLine.length) {
-                    characterIndex++;
+        const frames = lineFrames[lineIndex];
 
-                    setInsertedLines((previous) => {
-                        const updated = [...previous];
+        if (frameIndex >= frames.length) {
+            lineIndex++;
+            frameIndex = 0;
 
-                        updated[lineIndex] = currentLine.slice(
-                            0,
-                            characterIndex
-                        );
+            if (lineIndex < lineFrames.length) {
+                setInsertedLines((previous) => [...previous, ""]);
 
-                        return updated;
-                    });
-                } else {
-                    lineIndex++;
-                    characterIndex = 0;
+                typingTimeout = window.setTimeout(typeNextFrame, 150);
+            } else {
+                setInsertionComplete(true);
+            }
 
-                    if (lineIndex < codeBlock.length) {
-                        setInsertedLines((previous) => [
-                            ...previous,
-                            ""
-                        ]);
-                    }
-                }
-            }, 70);
-        }, 1000);
+            return;
+        }
 
-        return () => {
-            window.clearTimeout(startTimeout);
-            window.clearInterval(typingInterval);
-        };
+        const frame = frames[frameIndex];
+        const currentLineIndex = lineIndex;
+
+        typingTimeout = window.setTimeout(() => {
+            setInsertedLines((previous) => {
+                const updated = [...previous];
+                updated[currentLineIndex] = frame.text;
+                return updated;
+            });
+
+            frameIndex++;
+            typeNextFrame();
+        }, frame.delay);
+    };
+
+    const startTimeout = window.setTimeout(typeNextFrame, 1000);
+
+    return () => {
+        window.clearTimeout(startTimeout);
+        window.clearTimeout(typingTimeout);
+    };
     }, [typedLine]);
  
     useEffect(() => {
@@ -255,9 +269,7 @@ export default function SecondaryEditorPane({
                 }
 
                 setInsertedLines((previous) =>
-                    previous.map((line, index) => {
-                        if (index === 0) return line;
-
+                    previous.map((line) => {
                         return line.replace(/\S/g, () =>
                             glitchCharacters[
                                 Math.floor(
