@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { editorSequence } from "@/data/editorFiles"
+import { glitchCharacters } from "@/data/glitchCharacters"
+import { getRandomDeveloperQuote } from "@/data/developerQuotes";
 
 type PatchPhase = "idle" | "running" | "complete";
 
@@ -10,13 +12,15 @@ type CodeCanvasProps = {
     patchPhase: PatchPhase;
     onPatchPhaseChange: (phase: PatchPhase) => void;
     onNavigationComplete: () => void;
+    isPaused: boolean;
 };
 
 export default function CodeCanvas({
     activeCommand,
     patchPhase,
     onPatchPhaseChange,
-    onNavigationComplete
+    onNavigationComplete,
+    isPaused
 }: CodeCanvasProps){
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const footerInfoRef = useRef<HTMLSpanElement>(null);
@@ -24,13 +28,18 @@ export default function CodeCanvas({
     const commandRef = useRef(activeCommand);
     const patchRequestRef = useRef(false);
     const navigationTargetRef = useRef<number | null>(null);
+    const isPausedRef = useRef(isPaused);
 
     const lineHeight = 12;
-    const fontSize = 10;
-    const topPadding = 12;
+    const fontSize = 8;
+    const topPadding = 10;
     const gutterRight = 30;
     const codeStartX = 43;
-    const charWidth = 6;
+    const charWidth = fontSize * 0.6;
+
+    useEffect(() => {
+        isPausedRef.current = isPaused;
+    }, [isPaused]);
 
     useEffect(() => {
         commandRef.current = activeCommand;
@@ -63,6 +72,37 @@ export default function CodeCanvas({
 
         if (!ctx) return;
 
+                const logicalWidth = 620;
+        const logicalHeight = 260;
+
+        const resizeCanvas = () => {
+            const rect = canvas.getBoundingClientRect();
+            const pixelRatio = window.devicePixelRatio || 1;
+
+            const width = Math.round(rect.width* pixelRatio);
+            const height = Math.round(rect.height * pixelRatio);
+
+            if (canvas.width !== width || canvas.height !== height) {
+                canvas.width = width;
+                canvas.height = height;
+            }
+
+            ctx.setTransform(
+                width / logicalWidth,
+                0,
+                0,
+                height / logicalHeight,
+                0,
+                0
+            );
+        };
+
+        const resizeObserver = new ResizeObserver(resizeCanvas);
+
+        resizeObserver.observe(canvas);
+        resizeCanvas();
+
+
         let animationId: number;
 
         const mouse = {
@@ -90,10 +130,22 @@ export default function CodeCanvas({
                 "#D94B43"
             );
 
+            // Control flow statements
+            applyColor(
+                /\b(if|else|for|while|switch|case|break|continue)\b/g,
+                "#FF8A65"
+            );
+
             // TypeScript types
             applyColor(
                 /\b(number|string|boolean|void|Vector2D|Particle)\b/g,
                 "#F5C542"
+            );
+
+            // Function calls
+            applyColor(
+                /\b[A-Za-z_$][\w$]*(?=\s*\()/g,
+                "#79C0FF"
             );
 
             // Numbers (including decimals)
@@ -114,6 +166,18 @@ export default function CodeCanvas({
                 "#92958B"
             );
 
+            // Braces
+            applyColor(/[{}]/g, "#C792EA");
+
+            // Parentheses
+            applyColor(/[()]/g, "#79C0FF");
+
+            // Square brackets
+            applyColor(/[\[\]]/g, "#59C9A5");
+
+            // Operators
+            applyColor(/[=+\-*/<>!&|%]/g, "#FFB86C");
+
             return colors;
         };
 
@@ -123,11 +187,15 @@ export default function CodeCanvas({
         let lastFrameTime = 0;
         let editLineIndex = 6;
         let editColumn = codeLines[editLineIndex].length;
+        const createQuote = () => {
+            return `// ${getRandomDeveloperQuote()}`;
+        };
         const typingOptions = [
             " // live",
             " // synced",
             " // updated",
         ];
+
         const replacementOptions = [{
             search: "radius: 45",
             replacement: "radius: 60",
@@ -155,11 +223,23 @@ export default function CodeCanvas({
         let autoPauseUntil = 0;
         let hoveredRow: number | null = null;
         let hoveredColumn: number | null = null;
+        let quoteRow: number | null = null;
+        let quoteText = "";
+        let quoteTyping = false;
 
         const updateEditorInfo = () => {
             if (!footerInfoRef.current) return;
             
             const activeLine = editorSequence[firstVisibleLine];
+
+            const displayLine = activeLine.kind === "code"
+                ? activeLine
+                : editorSequence.find(
+                    (line) =>
+                        line.fileName === activeLine.fileName &&
+                        line.kind === "code"
+                );
+
 
             if (filenameRef.current) {
                 filenameRef.current.textContent = activeLine.fileName;
@@ -167,7 +247,11 @@ export default function CodeCanvas({
 
             const currentIndex = (firstVisibleLine + (hoveredRow ?? 0)) % codeLines.length;
 
-            const currentLine = editorSequence[currentIndex];
+            const selectedLine = editorSequence[currentIndex];
+
+            const currentLine = selectedLine.kind === "code" ? selectedLine : displayLine;
+
+            if (!currentLine || currentLine.lineNumber === null) return;
 
             const percentage = currentLine.totalLines > 1
                 ? ((currentLine.lineNumber - 1)) /
@@ -214,6 +298,8 @@ export default function CodeCanvas({
         const handleWheel = (event: WheelEvent) => {
             event.preventDefault();
 
+            if (isPausedRef.current) return;
+
             lastManualScrollTime = Date.now();
 
             const delta =
@@ -237,9 +323,9 @@ export default function CodeCanvas({
         const handleMouseMove = (event: MouseEvent) => {
             const rect = canvas.getBoundingClientRect();
 
-            mouse.x = (event.clientX - rect.left) * (canvas.width / rect.width);
+            mouse.x = (event.clientX - rect.left) * (logicalWidth / rect.width);
 
-            mouse.y = (event.clientY - rect.top) * (canvas.height / rect.height);
+            mouse.y = (event.clientY - rect.top) * (logicalHeight/ rect.height);
 
             const row = Math.floor((mouse.y - (topPadding - fontSize)) / lineHeight);
 
@@ -271,6 +357,8 @@ export default function CodeCanvas({
         canvas.addEventListener("wheel", handleWheel, { passive: false });
 
         const autoScrollInterval = window.setInterval(() => {
+            if (isPausedRef.current) return;
+            
             const now = Date.now();
 
             if (navigationTargetRef.current !== null){
@@ -317,6 +405,14 @@ export default function CodeCanvas({
         let glitchStartTimeout: number | undefined;
 
         const startEditing = (forced = false) => {
+            if (isPausedRef.current) {
+                typingStartTimeout = window.setTimeout(
+                    () => startEditing(forced),
+                    1000
+                )
+                return;
+            }
+            
             if (isEditing) return;
             isTerminalPatch = forced;
 
@@ -333,6 +429,77 @@ export default function CodeCanvas({
 
             if (!forced && commandRef.current === "inspect src/developer.ts") {
                 typingStartTimeout = window.setTimeout(startEditing, 1000);
+                return;
+            }
+
+            if (!forced) {
+                const candidateRows = [5, 6, 4, 7, 3, 8];
+
+                const selectedRow = candidateRows.find((row) => {
+                    const lineIndex = (firstVisibleLine + row) % codeLines.length;
+
+                    return editorSequence[lineIndex].kind === "code";
+                });
+
+                if (selectedRow === undefined) {
+                    typingStartTimeout = window.setTimeout(startEditing, 2000);
+                    return;
+                }
+
+                isEditing = true;
+                quoteTyping = true;
+                quoteRow = selectedRow;
+                quoteText = "";
+
+                const fullQuote = createQuote();
+                let characterIndex = 0;
+
+                typingInterval = window.setInterval(() => {
+                    if (isPausedRef.current) return;
+
+                    characterIndex++;
+                    quoteText = fullQuote.slice(0, characterIndex);
+
+                    if (characterIndex >= fullQuote.length) {
+                        window.clearInterval(typingInterval);
+
+                        glitchStartTimeout = window.setTimeout(() => {
+                            let glitchFrame = 0;
+
+                            glitchInterval = window.setInterval(() => {
+                                if (isPausedRef.current) return;
+
+                                glitchFrame++;
+
+                                if (glitchFrame >= 8) {
+                                    window.clearInterval(glitchInterval);
+
+                                    quoteText = "";
+                                    quoteRow = null;
+                                    quoteTyping = false;
+                                    isEditing = false;
+
+                                    lastManualScrollTime = Date.now();
+
+                                    typingStartTimeout = window.setTimeout(
+                                        startEditing,
+                                        12000
+                                    );
+
+                                    return;
+                                }
+
+                                quoteText = Array.from(
+                                    { length: fullQuote.length },
+                                    () => glitchCharacters[
+                                        Math.floor(Math.random() * glitchCharacters.length)
+                                    ]
+                                ).join("");
+                            }, 70);
+                        }, 3000);
+                    }
+                }, 65);
+
                 return;
             }
 
@@ -367,11 +534,11 @@ export default function CodeCanvas({
 
                 editColumn = valueStart;
 
-                const glitchSymbols = "█▓▒░⣿⣶⣤⠿";
-
                 let replacementFrame = 0;
                 
                 glitchInterval = window.setInterval(() => {
+                    if (isPausedRef.current) return;
+
                     replacementFrame++;
 
                     if (replacementFrame >= 8) {
@@ -404,13 +571,9 @@ export default function CodeCanvas({
                     }
 
                     const scrambled = Array.from(
-                        { length: oldValue.length },
-                        () => glitchSymbols[Math.floor(Math.random() * glitchSymbols.length)]
+                        { length: typingText.length },
+                        () => glitchCharacters[Math.floor(Math.random() * glitchCharacters.length)]
                     ).join("");
-
-                    codeLines[editLineIndex] = before + scrambled + after;
-
-                    updateVisibleLines();
                 }, 70);
 
                 return;
@@ -460,7 +623,6 @@ export default function CodeCanvas({
                     glitchStartTimeout = window.setTimeout(() => {
                         const originalLine = codeLines[editLineIndex];
                         const baseCode = originalLine.slice(0, originalLine.length - typingText.length);   
-                        const glitchSymbols = "█▓▒░⣿⣶⣤⠿■▪@#$%&";
 
                         let glitchFrame = 0;
 
@@ -492,7 +654,7 @@ export default function CodeCanvas({
 
                             const scrambled = Array.from(
                                 { length: typingText.length },
-                                () => glitchSymbols[Math.floor(Math.random() * glitchSymbols.length)]).join("");
+                                () => glitchCharacters[Math.floor(Math.random() * glitchCharacters.length)]).join("");
 
                                 codeLines[editLineIndex] = baseCode + scrambled;
 
@@ -522,9 +684,14 @@ export default function CodeCanvas({
 
             lastFrameTime = time;
 
+            if (isPausedRef.current) {
+                scrollVelocity = 0;
+                scrollOffset = 0;
+            }
+
             const target = navigationTargetRef.current;
 
-            if (target !== null && !isEditing) {
+            if (target !== null && !isEditing && !isPausedRef.current) {
                 const distance =
                     (target - firstVisibleLine + codeLines.length)
                     % codeLines.length;
@@ -552,7 +719,7 @@ export default function CodeCanvas({
                 }
             }
 
-            if (Math.abs(scrollVelocity) > 0.05) {
+            if (!isPausedRef && Math.abs(scrollVelocity) > 0.05) {
                 scrollOffset += scrollVelocity * frameDelta;
 
                 while (scrollOffset >= lineHeight) {
@@ -603,27 +770,83 @@ export default function CodeCanvas({
 
             for (let row = 0; row < visibleLines.length; row++) {  
                 const lineIndex = (firstVisibleLine + row) % codeLines.length;
+                const line = editorSequence[lineIndex];
 
-                const lineNumber = String(editorSequence[lineIndex].lineNumber);
+                if (line.kind !== "code") continue;
+                
+                const shiftedRow =
+                    quoteTyping && quoteRow !== null && row > quoteRow
+                        ? row + 1
+                        : row;
 
-                const y = topPadding + row * lineHeight;
+                const y = topPadding + shiftedRow * lineHeight;
 
-                ctx.fillText(lineNumber, gutterRight, y);
+                ctx.fillText(String(line.lineNumber), gutterRight, y);
             }
 
             ctx.font = `${fontSize}px ${canvasFont}`;
             ctx.textAlign = "left";
   
             for (let row = 0; row < characters.length; row++) {
+                const lineIndex = (firstVisibleLine + row) % codeLines.length;
+                const line = editorSequence[lineIndex];
+                const shiftedRow =
+                    quoteTyping && quoteRow !== null && row > quoteRow
+                        ? row + 1
+                        : row;
+
+                const y = topPadding + shiftedRow * lineHeight;
+
+                if (line.kind === "separator") {
+                    ctx.fillStyle = "#494538";
+                    ctx.fillText("─────────", codeStartX, y);
+                    
+                    const titleX = codeStartX + 10 * charWidth;
+
+                    ctx.fillStyle = "#F5C542";
+                    ctx.fillText(line.text, titleX, y);
+
+                    const endX = titleX + (line.text.length + 1) * charWidth;
+
+                    ctx.fillStyle = "#494538";
+                    ctx.fillText("─────────", endX, y);
+                    continue
+                }
+
                 for (let col = 0; col < characters[row].length; col++) {
                     const character = characters[row][col];
-
                     const x = codeStartX + col * charWidth;
-                    const y = topPadding + row * lineHeight;
 
                     ctx.fillStyle = characterColors[row][col];
-
                     ctx.fillText(character, x, y);
+                }
+            }
+
+            if (quoteTyping && quoteRow !== null) {
+                const commentRow = quoteRow + 1;
+                const commentY = topPadding + commentRow * lineHeight;
+
+                // New line marker
+                ctx.fillStyle = "#59C9A5";
+                ctx.textAlign = "right";
+                ctx.fillText("+", gutterRight, commentY);
+
+                // Developer comment
+                ctx.textAlign = "left";
+                ctx.fillStyle = "#92958B";
+                ctx.fillText(quoteText, codeStartX, commentY);
+
+                // Blinking typing cursor
+                if (time % 1000 < 500) {
+                    const cursorX = codeStartX + ctx.measureText(quoteText).width;
+
+                    ctx.fillStyle = "#F5C542";
+                    ctx.fillRect(
+                        cursorX + 2,
+                        commentY - fontSize,
+                        2,
+                        fontSize + 2
+                    );
                 }
             }
 
@@ -633,8 +856,8 @@ export default function CodeCanvas({
 
             const cursorVisible = time % 1000 < 500;
 
-            if (editRow < visibleLines.length && cursorVisible) {
-                const cursorX = codeStartX + editColumn * 8;
+            if (isEditing && !quoteTyping && editRow < visibleLines.length && cursorVisible) {
+                const cursorX = codeStartX + editColumn * charWidth;
 
                 const cursorY = topPadding + editRow * lineHeight - fontSize + 1;
 
@@ -672,6 +895,7 @@ export default function CodeCanvas({
     
         return () => {
             cancelAnimationFrame(animationId);
+            resizeObserver.disconnect();
 
             window.clearInterval(autoScrollInterval);
             window.clearTimeout(typingStartTimeout);
@@ -715,7 +939,7 @@ export default function CodeCanvas({
                 ref={canvasRef}
                 width={620}
                 height={260}
-                className="block h-auto w-full"
+                className="block w-full aspect-[620/260]"
             />
 
             <div className="flex items-center justify-between px-3 py-3">

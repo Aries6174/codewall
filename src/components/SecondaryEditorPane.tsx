@@ -1,28 +1,84 @@
 "use client"
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { editorSequence } from "@/data/editorFiles";
+import { glitchCharacters } from "@/data/glitchCharacters"
 
 type SecondaryEditorPaneProps = {
     onEditingComplete: () => void;
     onExecutionComplete: () => void;
     runRequested: boolean;
+    isVisible: boolean;
 };
 
 const systemLines = editorSequence.filter(
     (line) => line.fileName === "system.ts"
 );
 
-const newCode = "const previewActive = true;"
+const patchInsertIndex = systemLines.reduce(
+    (lastImportIndex, line, index) =>
+        line.text.trim().startsWith("import ")
+        ? index
+        : lastImportIndex,
+    -1
+);
+
+const newCode = "const diagnosticsEnabled = true;"
+
+function HighlightedCode({ text }: { text: string }) {
+    const tokens = text.split(
+        /(\/\/.*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:const|let|type|function|return|if|else|for|while|switch|case|break|continue)\b|\b(?:number|string|boolean|void|Vector2D|Particle)\b|\b\d+(?:\.\d+)?\b|[{}()[\]=+\-*/<>!&|%])/g
+    );
+    return (
+        <span className="whitespace-pre">
+            {tokens.map((token, index) => {
+                let color = "#E6DDC9";
+
+                if (token.startsWith("//")) {
+                    color = "#92958B";
+                } else if (/^(if|else|for|while|switch|case|break|continue)$/.test(token)) {
+                    color = "#FF8A65";
+                } else if (/^(const|let|type|function|return)$/.test(token)) {
+                    color = "#D94B43";
+                } else if (/^[{}]$/.test(token)) {
+                    color = "#C792EA";
+                } else if (/^[()]$/.test(token)) {
+                    color = "#79C0FF";
+                } else if (/^[\[\]]$/.test(token)) {
+                    color = "#59C9A5";
+                } else if (/^[=+\-*/<>!&|%]$/.test(token)) {
+                    color = "#FFB86C";
+                } else if (
+                    /^(number|string|boolean|void|Vector2D|Particle)$/.test(token) ||
+                    /^\d+(?:\.\d+)?$/.test(token) ||
+                    token.startsWith('"') ||
+                    token.startsWith("'")
+                ) {
+                    color = "#F5C542";
+                }
+
+                return (
+                    <span key={index} style={{ color }}>
+                        {token}
+                    </span>
+                );
+            })}
+        </span>
+    );
+}
 
 export default function SecondaryEditorPane({
     onEditingComplete,
     onExecutionComplete,
-    runRequested
+    runRequested,
+    isVisible
 }: SecondaryEditorPaneProps) {
     const [typedLine, setTypedLine] = useState("");
+    const [visibleLines, setVisibleLines] = useState(0);
+    const [sourceLoaded, setSourceLoaded] = useState(false);
     const [typingComplete, setTypingComplete] = useState(false);
     const [insertedLines, setInsertedLines] = useState<string[]>([]);
+    const [insertionComplete, setInsertionComplete] = useState(false);
     const [executionComplete, setExecutionComplete] = useState(false);
 
     const executionPhase = !runRequested
@@ -30,7 +86,35 @@ export default function SecondaryEditorPane({
         : executionComplete
             ? "complete"
             : "running";
+
     useEffect(() => {
+        if (!isVisible) return;
+        
+        let lineIndex = 0;
+        let lineInterval: number | undefined;
+
+        const startTimeout = window.setTimeout(() => {
+            lineInterval = window.setInterval(() => {
+                lineIndex++;
+
+                setVisibleLines(lineIndex);
+
+                if (lineIndex >= systemLines.length) {
+                    window.clearInterval(lineInterval);
+                    setSourceLoaded(true);
+                }
+            },90);
+        }, 550);
+
+        return () => {
+            window.clearTimeout(startTimeout);
+            window.clearInterval(lineInterval);
+        };
+    }, [isVisible]);
+    
+    useEffect(() => {
+        if (!sourceLoaded) return;
+
         let characterIndex = 0
         let typingInterval: number | undefined;
 
@@ -51,7 +135,7 @@ export default function SecondaryEditorPane({
             window.clearTimeout(startTimeout);
             window.clearInterval(typingInterval);
         };
-    }, []);
+    }, [sourceLoaded]);
 
     useEffect(() => {
         if (!typingComplete) return;
@@ -59,7 +143,6 @@ export default function SecondaryEditorPane({
         let glitchInterval: number | undefined;
 
         const timeout = window.setTimeout(() => {
-            const glitchSymbols = "█▓▒░";
             let glitchFrame = 0;
 
             glitchInterval = window.setInterval(() => {
@@ -77,8 +160,8 @@ export default function SecondaryEditorPane({
 
                 const scrambled = Array.from(
                     { length: 4 },
-                    () => glitchSymbols[
-                        Math.floor(Math.random() * glitchSymbols.length)
+                    () => glitchCharacters[
+                        Math.floor(Math.random() * glitchCharacters.length)
                     ]
                 ).join("");
 
@@ -95,51 +178,69 @@ export default function SecondaryEditorPane({
     }, [typingComplete]);
 
     useEffect(() => {
-        if (typedLine !== "const previewActive = false;") return;
+        if (typedLine !== "const diagnosticsEnabled = false;") return;
 
         const codeBlock = [
-            "",
-            "function renderPreview() {",
-            "    if (!previewActive) return;",
-            '    console.log("Preview initialized");',
+            "function logBootStatus(): void {",
+            "    if (!diagnosticsEnabled) return;",
+            '    console.info("Runtime diagnostics active");',
             "}"
         ];
 
         let lineIndex = 0;
-        let insertionInterval: number | undefined;
+        let characterIndex = 0;
+        let typingInterval: number | undefined;
 
         const startTimeout = window.setTimeout(() => {
-            insertionInterval = window.setInterval(() => {
+            typingInterval = window.setInterval(() => {
                 if (lineIndex >= codeBlock.length) {
-                    window.clearInterval(insertionInterval);
+                    window.clearInterval(typingInterval);
+                    setInsertionComplete(true);
                     return;
                 }
 
-                const nextLine = codeBlock[lineIndex];
+                const currentLine = codeBlock[lineIndex];
 
-                setInsertedLines((previous) => [
-                    ...previous,
-                    nextLine
-                ]);
+                if (characterIndex < currentLine.length) {
+                    characterIndex++;
 
-                lineIndex++;
-            }, 500);
+                    setInsertedLines((previous) => {
+                        const updated = [...previous];
+
+                        updated[lineIndex] = currentLine.slice(
+                            0,
+                            characterIndex
+                        );
+
+                        return updated;
+                    });
+                } else {
+                    lineIndex++;
+                    characterIndex = 0;
+
+                    if (lineIndex < codeBlock.length) {
+                        setInsertedLines((previous) => [
+                            ...previous,
+                            ""
+                        ]);
+                    }
+                }
+            }, 70);
         }, 1000);
 
         return () => {
             window.clearTimeout(startTimeout);
-            window.clearInterval(insertionInterval);
+            window.clearInterval(typingInterval);
         };
     }, [typedLine]);
  
     useEffect(() => {
-        if (insertedLines.length !== 5) return;
+        if (!insertionComplete) return;
 
         let glitchInterval: number | undefined;
         let glitchFrame = 0;
 
         const startTimeout = window.setTimeout(() => {
-            const glitchSymbols = "█▓▒░⣿⣶⣤⠿";
 
             glitchInterval = window.setInterval(() => {
                 glitchFrame++;
@@ -158,9 +259,9 @@ export default function SecondaryEditorPane({
                         if (index === 0) return line;
 
                         return line.replace(/\S/g, () =>
-                            glitchSymbols[
+                            glitchCharacters[
                                 Math.floor(
-                                    Math.random() * glitchSymbols.length
+                                    Math.random() * glitchCharacters.length
                                 )
                             ]
                         );
@@ -173,7 +274,7 @@ export default function SecondaryEditorPane({
             window.clearTimeout(startTimeout);
             window.clearInterval(glitchInterval);
         };
-    }, [insertedLines.length, onEditingComplete]);
+    }, [insertionComplete, onEditingComplete]);
 
     useEffect(() => {
         if (!runRequested) return;
@@ -186,18 +287,22 @@ export default function SecondaryEditorPane({
         return () => window.clearTimeout(timeout);
     }, [runRequested, onExecutionComplete]);
 
-    return(
-        <div className="w-full min-w-0 bg-[#0B0C0B]">
 
-            {/* Header */}
+    return (
+        <div className="flex h-full w-full min-w-0 flex-col bg-[#0B0C0B]">
+
+            {/* Header - matches CodeCanvas */}
             <div className="flex items-center justify-between px-2 py-0.5">
-                <span className="font-mono text-[10px] text-[#E6DDC9]">
-                    <span className="text-[#F5C542]">●</span>
-                    {" "}src / system.ts
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className="h-[5px] w-[5px] rounded-full bg-[#F5C542]" />
+
+                    <span className="font-mono text-[10px] text-[#E6DDC9]">
+                        src / system.ts
+                    </span>
+                </div>
 
                 <span
-                    className={`font-mono text-[9px] ${
+                    className={`font-mono text-[10px] tracking-wide ${
                         executionPhase === "running"
                             ? "animate-pulse text-[#F5C542]"
                             : "text-[#92958B]"
@@ -211,58 +316,68 @@ export default function SecondaryEditorPane({
                 </span>
             </div>
 
-            {/* Source code */}
-            <div className={`h-[260px] overflow-hidden px-2 font-mono text-[10px] leading-[12px] ${
-                executionPhase === "running" ? "animate-pulse" : ""
-            }`}>
-                {systemLines.map((line) => (
-                    <div key={line.lineNumber} className="flex">
+            {/* Source code viewport */}
+            <div
+                className={`min-h-0 flex-1 overflow-hidden px-2 font-mono text-[10px] leading-[12px] ${
+                    executionPhase === "running" ? "animate-pulse" : ""
+                }`}
+                style={{
+                    maskImage:
+                        "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)"
+                }}
+            >
+                
+            {/* Source lines with an inline patch */}
+            {systemLines.slice(0, visibleLines).map((line, index) => (
+                <Fragment key={line.lineNumber}>
+                    <div className="flex">
                         <span className="mr-3 w-5 shrink-0 text-right text-[#92958B]">
                             {line.lineNumber}
                         </span>
-
-                        <span className="whitespace-pre text-[#E6DDC9]">
-                            {line.text}
-                        </span>
+                        <HighlightedCode text={line.text} />
                     </div>
-                ))}
-                
-                <div className="flex">
-                    <span className="mr-3 w-5 shrink-0 text-right text-[#92958B]">
-                        {systemLines.length + 1}
-                    </span>
 
-                    <span className="whitespace-pre text-[#E6DDC9]">
-                        {typedLine}
-                        <span className="text-[#F5C542]">▌</span>
-                    </span>
-                </div>
+                    {/* Insert the patch immediately after the imports */}
+                    {sourceLoaded && index === patchInsertIndex && (
+                        <>
+                            <div className="flex">
+                                <span className="mr-3 w-5 shrink-0 text-right text-[#59C9A5]">
+                                    +
+                                </span>
+                                <span className="whitespace-pre">
+                                    <HighlightedCode text={typedLine} />
+                                    <span className="cursor-blink text-[#F5C542]">
+                                        ▌
+                                    </span>
+                                </span>
+                            </div>
 
-                {insertedLines.map((line, index) => (
-                    <div key={index} className="flex">
-                        <span className="mr-3 w-5 shrink-0 text-right text-[#92958B]">
-                            {systemLines.length + 2 + index}
-                        </span>
-
-                        <span className="whitespace-pre text-[#E6DDC9]">
-                            {line || " "}
-                        </span>
-                    </div>
-                ))}
+                            {insertedLines.map((insertedLine, lineIndex) => (
+                                <div key={lineIndex} className="flex">
+                                    <span className="mr-3 w-5 shrink-0 text-right text-[#59C9A5]">
+                                        +
+                                    </span>
+                                    <HighlightedCode text={insertedLine || " "} />
+                                </div>
+                            ))}
+                        </>
+                    )}
+                </Fragment>
+            ))}
 
             </div>
 
-            {/* Footer */}
-
-            <div className="flex items-center justify-between px-2 py-0.5 font-mono text-[9px]">
-                <span className="text-[#F5C542]">
+            {/* Footer - matches CodeCanvas */}
+            <div className="flex items-center justify-between px-3 py-3">
+                <span className="font-mono text-[10px] text-[#F5C542]">
                     ● SOURCE LOADED
                 </span>
 
-                <span className="text-[#92958B]">
-                    Ln 1 / {systemLines.length} . 0.0%
+                <span className="font-mono text-[10px] text-[#92958B]">
+                    Ln 1 / {systemLines.length} · 0.0%
                 </span>
             </div>
+
 
         </div>
     );

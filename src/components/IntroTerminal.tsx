@@ -255,7 +255,7 @@ export default function IntroTerminal({
         }
 
         const typingDelay =
-            commandIndex === 1 && visibleCount === 0 ? 6500 : 90;
+            commandIndex === 1 && visibleCount === 0 ? 6500 : 35;
 
         if (visibleCount < currentCommand.input.length) {
             const timeout = window.setTimeout(() => {
@@ -286,7 +286,7 @@ export default function IntroTerminal({
 
             setCommandIndex((index) => index + 1);
             setVisibleCount(0);
-        }, 800);
+        }, 450);
 
         return () => window.clearTimeout(timeout);
     }, [
@@ -396,7 +396,7 @@ export default function IntroTerminal({
     };
 
     return (
-        <div className="w-full max-w-[620px] font-mono">
+        <div className="w-full font-mono">
 
             {/* Terminal header */}
             <div className="flex items-center justify-between text-[10px] text-[#92958B]">
@@ -414,7 +414,7 @@ export default function IntroTerminal({
             {/* Terminal output */}
             <div
                 ref={terminalOutputRef}
-                className="mt-1.5 h-[90px] space-y-0.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[10px] leading-[12px]"
+                className="mt-1.5 h-[105px] space-y-0.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[11px] leading-[15px]"
             >
                 <p className="text-[#92958B]">
                     <span className="mr-3 text-[#F5C542]">➜</span>

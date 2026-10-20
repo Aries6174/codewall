@@ -228,34 +228,47 @@ export default function Home() {
               }`}
           >
             {/* System identification */}
-            <p className="text-xs tracking-[0.3em] text-[#92958B]">
-              ADRIAN.JS / {signalDetected ? "SIGNAL_RECEIVED" : "SYSTEM_001"}
-            </p>
-        
+            <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.2em]">
+              <span className="font-medium text-[#E6DDC9]">
+                ADRIAN.JS
+              </span>
+
+              <span className="text-[#494538]">/</span>
+
+              <span
+                className={
+                  signalDetected
+                  ? "text-[#F5C542]"
+                  : "text-[#92958B]"
+                }
+              >
+                {signalDetected ? "SIGNAL_RECEIVED" : "SYSTEM_001"}
+              </span>
+            </div>
+
             {/* Interactive code editor */}
-            <div
-              className={`grid w-full grid-cols-[minmax(0,620px)_minmax(0,1fr)] transition-[max-width,column-gap] duration-700 ease-in-out ${
-                isSplit
-                  ? "max-w-[1040px] gap-x-3"
-                  : "max-w-[620px] gap-x-0"
-              }`}
-            >
-              {/* Primary editor */}
+            <div className="relative w-full max-w-[700px] overflow-hidden">
+
+              {/* Primary editor - stays in place */}
               <CodeCanvas
                 activeCommand={terminalCommand}
                 patchPhase={patchPhase}
                 onPatchPhaseChange={handlePatchPhaseChange}
                 onNavigationComplete={finishNavigation}
+                isPaused={isSplit}
               />
 
-              {/* Temporary secondary editor */}
+              {/* Secondary editor - occupies right half */}
               {isSplit && (
                 <div
-                  className={`min-w-0 overflow-hidden transition-[opacity,transform] duration-500 ease-in-out ${
-                    secondaryVisible
-                      ? "translate-x-0 opacity-100"
-                      : "translate-x-4 opacity-0"
-                  }`}
+                  className={`absolute inset-y-0 right-0 z-10 w-1/2 overflow-hidden
+                    border-l border-[#494538] bg-[#0B0C0B]
+                    transition-[transform,opacity] duration-500 ease-in-out
+                    ${
+                      secondaryVisible
+                        ? "translate-x-0 opacity-100"
+                        : "translate-x-full opacity-0"
+                    }`}
                 >
                   <SecondaryEditorPane
                     onEditingComplete={finishSecondaryEditing}
@@ -263,41 +276,48 @@ export default function Home() {
                     runRequested={
                       secondaryCommand === "editor.run preview.ts"
                     }
+                    isVisible={secondaryVisible}
                   />
                 </div>
               )}
+
             </div>
 
             {/* Terminal */}
-            <IntroTerminal
-              ref={terminalRef}
-              onCommand={handleTerminalCommand}
-              patchPhase={patchPhase}
-              onEnterSystem={enterSystem}
-              secondaryEditComplete={secondaryEditComplete}
-              secondaryExecutionComplete={secondaryExecutionComplete}
-              isVisitorIdle={isVisitorIdle}
-            />
+            <div className="w-full max-w-[700px]">
+              <IntroTerminal
+                ref={terminalRef}
+                onCommand={handleTerminalCommand}
+                patchPhase={patchPhase}
+                onEnterSystem={enterSystem}
+                secondaryEditComplete={secondaryEditComplete}
+                secondaryExecutionComplete={secondaryExecutionComplete}
+                isVisitorIdle={isVisitorIdle}
+              />
+            </div>
 
-            {/* Status indicator */}
-            <div className="h-3 w-3 animate-pulse rounded-full bg-[#F5C542]" />
+            {/* Systerm entry section */}
+            <div className="mt-5 flex items-center gap-2">
 
-            {/* Typed system message */}
-            <p className="text-sm text-[#F5C542]">
-              {message.slice(0, visibleCount)}
-              <span className="cursor-blink">_</span>
-            </p>
+              {/* System status */}
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 animate rounded-full bg-[#F5C542]" />
 
-            {/* Enter system button */}
-            {!hasEntered && (
-              <button
+                <p className = "font-mono text-[11px] text-[#F5C542]">
+                  {message.slice(0, visibleCount)}
+                  <span className="cursor-blink">_</span>
+                </p>
+              </div>
+              {!hasEntered && (
+                <button
                 type="button"
                 onClick={enterSystem}
-                className="mt-4 border border-[#494538] px-6 py-3 text-xs tracking-[0.2em] text-[#F5C542] transition-colors duration-300 hover:border-[#F5C542] hover:bg-[#F5C542] hover:text-[#0B0C0B]"
-              >
-                [ ENTER SYSTEM ]
-              </button>
-            )}
+                className="mt border border-[#494538] px-6 py-3 font-mono text-[10px] tracking-[0.2em] text-[#F5C542] transition-colors duration-300 hover:border-[#F5C542] hover:bg-[#F5C542] hover:text-[#0B0C0B]">
+                  [ ENTER SYSTEM ]
+                </button>
+              )}
+
+            </div>
           </div>
         </>
       )}
