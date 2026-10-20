@@ -643,7 +643,7 @@ export default function CodeCanvas({
                 }
             }
 
-            if (!isPausedRef && Math.abs(scrollVelocity) > 0.05) {
+            if (!isPausedRef.current && Math.abs(scrollVelocity) > 0.05) {
                 scrollOffset += scrollVelocity * frameDelta;
 
                 while (scrollOffset >= lineHeight) {
