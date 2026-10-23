@@ -50,7 +50,7 @@ function getNearbyKey(character: string): string {
 export function createTypingFrames(
     text: string,
     typingSpeed = 27,
-    typoChance = 0.08
+    typoChance = 0.025
 ): TypingFrame[] {
     const frames: TypingFrame[] = [];
     let typed = "";

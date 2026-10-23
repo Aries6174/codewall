@@ -116,7 +116,7 @@ export default function SecondaryEditorPane({
     useEffect(() => {
         if (!sourceLoaded) return;
 
-        const frames = createTypingFrames(newCode, 45, 0.08);
+        const frames = createTypingFrames(newCode, 45, 0.025);
 
         let frameIndex = 0;
         let typingTimeout: number | undefined;
@@ -195,7 +195,7 @@ export default function SecondaryEditorPane({
         ];
 
         const lineFrames = codeBlock.map((line) =>
-        createTypingFrames(line, 45, 0.08)
+        createTypingFrames(line, 45, 0.025)
     );
 
     let lineIndex = 0;

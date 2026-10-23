@@ -112,7 +112,7 @@ export default function IntroTerminal({
         return createTypingFrames(
             currentCommand.input,
             27,
-            0.08
+            0.025
         );
     }, [currentCommand]);
 

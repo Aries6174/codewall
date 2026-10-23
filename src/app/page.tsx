@@ -204,10 +204,6 @@ export default function Home() {
   return (
     <main className="relative flex min-h-dvh items-center justify-center bg-background text-foreground">
 
-      <LivingCodeCanvas
-        onSignalChange={setSignalDetected}
-      />
-
       {/* INTRO SCREEN */}
       {!showPortfolio && (
         <>
@@ -231,7 +227,7 @@ export default function Home() {
             <div className="flex min-w-0 flex-col gap-4">
 
               {/* CodeCanvas container */}
-              <div className="relative w-full max-w-[700px] overflow-hidden">
+              <div className="relative w-full border max-w-[700px] overflow-hidden">
 
                 <CodeCanvas
                   activeCommand={terminalCommand}
@@ -267,7 +263,7 @@ export default function Home() {
               </div>
 
               {/* IntroTerminal stays BELOW CodeCanvas */}
-              <div className="w-full max-w-[700px]">
+              <div className="w-full border max-w-[700px]">
                 <IntroTerminal
                   ref={terminalRef}
                   onCommand={handleTerminalCommand}

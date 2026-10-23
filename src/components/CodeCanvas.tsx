@@ -445,7 +445,7 @@ export default function CodeCanvas({
                 quoteText = "";
 
                 const fullQuote = createQuote();
-                const typingFrames = createTypingFrames(fullQuote, 45, 0.08);
+                const typingFrames = createTypingFrames(fullQuote, 45, 0.025);
 
                 let frameIndex = 0;
 
