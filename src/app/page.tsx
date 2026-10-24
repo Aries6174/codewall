@@ -299,7 +299,7 @@ export default function Home() {
                 </p>
 
                 {/* */}
-                <p className="font-mono text-[10px] tracking-[0.18] text-[#92958B]">
+                <p className="font-mono text-[10px] tracking-[0.18em] text-[#92958B]">
                   BASED IN THE PHILIPPINES
                 </p>
                 
@@ -315,19 +315,34 @@ export default function Home() {
                     {/* Specialties */}
                     <div className="mt-8 flex flex-col gap-2 font-mono text-[10px] tracking-[0.1em] text-[#92958B]">
                       <p><span className="text-[#D94B43]">//</span> WEB APPLICATIONS</p>
-                      <p><span className="text-[#D94B43]">//</span> CREATIVE SSYTEMS</p>
+                      <p><span className="text-[#D94B43]">//</span> CREATIVE SYSTEMS</p>
                       <p><span className="text-[#D94B43]">//</span> OPEN SOURCE</p>
                     </div>
                 </div>
 
                 {/* Enter System */}
                 {!hasEntered && (
-                  <button
-                    type="button"
-                    onClick={enterSystem}
-                    className="mt-10 border border-[#F5C542] px-8 py-4 font-mono text-[11px] tracking-[0.2em] text-[#F5C542] transition-colors duration-300 hover:bg-[#F5C542] hover:text-[#0B0C0B]">
-                      [ ENTER SYSTEM ]
-                    </button>
+                  <div className="mt-10 flex flex-col gap-3">
+                    <div className="flex items-center gap-5">
+                      <button
+                        type="button"
+                        onClick={enterSystem}
+                        className="border border-[#F5C542] px-8 py-4 font-mono text-[11px] tracking-[0.2em] text-[#F5C542] transition-colors duration-300 hover:bg-[#F5C542] hover:text-[#0B0C0B]">
+                          [ ENTER SYSTEM ]
+                        </button>
+
+                        <span className="font-mono text-xl text-[#F5C542]">
+                          →
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="h-px w-5 bg-[#494538]" />
+                      <span className="font-mono text-[10px] text-[#92958B]">
+                        proceed to /site
+                      </span>
+                    </div>
+                  </div>
                 )}
 
                 {/* System Status */}
@@ -336,6 +351,37 @@ export default function Home() {
                   <span className="cursor-blink">_</span>
                 </p>
 
+                {/* System  Readout */}
+                <div className="mt-10 w-full max-w-[340px] border-t border-[#494538] pt-5">
+
+                  <p className="mb-5 font-mono text-[10px] tracking-[0.15em] text-[#92958B]">
+                    SYSTEM READOUT
+                  </p>
+
+                  <div className="grid grid-cols-[120px_1fr] gap-y-3 font-mono text-[10px]">
+
+                    <span className="text-[#92958B]">› PATCH MODE</span>
+                    <span className="text-[#F5C542]">
+                      {patchPhase.toUpperCase()}
+                    </span>
+
+                    <span className="text-[#92958B]">› EDITOR MODE</span>
+                    <span className="text-[#F5C542]">
+                      {isSplit ? "SPLIT" : "SINGLE"}
+                    </span>
+
+                    <span className="text-[#92958B]">› SESSION</span>
+                    <span className="text-[#F5C542]">
+                      001
+                    </span>
+
+                    <span className="text-[#92958B]">› SYSTEM</span>
+                    <span className={hasEntered ? "text-[#F5C542]" : "text-[#D94B43]"}>
+                      {hasEntered ? "INITIALIZING" :  "DORMANT"}
+                    </span>
+
+                  </div>
+                </div>
               </div>
             </div>  
           </div>
