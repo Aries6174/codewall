@@ -224,7 +224,7 @@ export default function Home() {
           >
 
             {/* Interactive code editor */}
-            <div className="flex min-w-0 flex-col gap-4">
+            <div className="flex min-w-0 flex-col item-start gap-4">
 
               {/* CodeCanvas container */}
               <div className="relative w-full border max-w-[700px] overflow-hidden">
@@ -277,27 +277,31 @@ export default function Home() {
 
             </div>
 
-            {/* Systerm entry section */}
+            {/* Developer Introduction */}
             <div className="flex min-w-0 flex-col items-start gap-2">
-              <div className="mt-5 flex items-center gap-2">
 
-                {/* System status */}
-                <div className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 animate rounded-full bg-[#F5C542]" />
+              {/*  */}
+              <div className="mt-8 flex flex-col items-start gap-2">
 
-                  <p className = "font-mono text-[11px] text-[#F5C542]">
-                    {message.slice(0, visibleCount)}
-                    <span className="cursor-blink">_</span>
-                  </p>
-                </div>
-                {!hasEntered && (
-                  <button
-                  type="button"
-                  onClick={enterSystem}
-                  className="mt border border-[#494538] px-6 py-3 font-mono text-[10px] tracking-[0.2em] text-[#F5C542] transition-colors duration-300 hover:border-[#F5C542] hover:bg-[#F5C542] hover:text-[#0B0C0B]">
-                    [ ENTER SYSTEM ]
-                  </button>
-                )}
+                {/* Baybayin Symbol */}
+                <span className="mb-3 font-mono text-4xl text-[#F5C542]">
+                  ᜀᜇ᜔ᜍᜒᜀᜈ᜔
+                </span>
+                
+                {/* Developer Name */}
+                <h1 className="font-mono text-2xl font-semibold tracking-[0.15em] text-[#E6DDC9]">
+                  ADRIAN.JS
+                </h1>
+
+                {/* Developer Information */}
+                <p className="font-mono text-[10px] tracking-[0.18em] text-[#92958B]">
+                  SOFTWARE DEVELOPER
+                </p>
+
+                {/* */}
+                <p className="font-mono text-[10px] tracking-[0.18] text-[#92958B]">
+                  BASED IN THE PHILIPPINES
+                </p>
               </div>
             </div>  
           </div>
