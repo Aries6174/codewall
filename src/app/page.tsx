@@ -4,10 +4,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import CodeCanvas from "@/components/CodeCanvas";
-import LivingCodeCanvas from "@/components/LivingCodeCanvas";
 import IntroTopBar from "@/components/IntroTopBar";
 import SecondaryEditorPane from "@/components/SecondaryEditorPane";
 import IntroTerminal, { type IntroTerminalHandle } from "@/components/IntroTerminal";
+import IntroAtmosphere from "@/components/IntroAtmosphere"
 
 type PatchPhase = "idle" | "running" | "complete";
 
@@ -27,6 +27,8 @@ export default function Home() {
   const [isVisitorIdle, setIsVisitorIdle] = useState(false);
   const lastInteractionRef = useRef(0);
   const terminalRef = useRef<IntroTerminalHandle>(null);
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const [sceneScale, setSceneScale] = useState(1);
 
   // Message displayed underneath the editor
   const message = hasEntered
@@ -201,8 +203,53 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    const updateScale = () => {
+    const headerSpace = 72;
+    const footerSpace = 24;
+
+    const availableWidth = window.innerWidth - 32;
+    const availableHeight =
+      window.innerHeight - headerSpace - footerSpace;
+
+
+      const sceneWidth = scene.offsetWidth;
+      const sceneHeight = scene.offsetHeight;
+
+      if (!sceneWidth || !sceneHeight) return;
+
+      const nextScale = Math.min(
+        1,
+        availableWidth / sceneWidth,
+        availableHeight / sceneHeight
+      );
+
+      setSceneScale(Math.max(0.1, nextScale));
+    };
+
+    const observer = new ResizeObserver(updateScale);
+
+    observer.observe(scene);
+    window.addEventListener("resize", updateScale);
+    updateScale();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateScale);
+    };
+  }, []);
+
   return (
-    <main className="relative flex min-h-dvh items-center justify-center bg-background text-foreground">
+    <main
+      className={`relative bg-background text-foreground ${
+        showPortfolio
+          ? "flex min-h-dvh justify-center px-6 py-12"
+          : "h-dvh overflow-hidden"
+      }`}
+    >
 
       {/* INTRO SCREEN */}
       {!showPortfolio && (
@@ -215,12 +262,21 @@ export default function Home() {
 
           {/* Central intro content */}
           <div
-            className={`relative z-10 grid w-full max-w-[1250px] grid-cols-1 items-start gap-6 px-4 lg:grid-cols-[minmax(0,700px)_minmax(0,1fr)] lg:gap-10 transition-all duration-700 ease-in-out 
+            ref={sceneRef}
+            className={`absolute left-1/2 top-[calc(50%+24px)]
+              grid w-[1250px]
+              grid-cols-[minmax(0,700px)_minmax(0,1fr)]
+              items-start gap-10 px-4
+              transition-[opacity,filter] duration-700 ease-in-out
               ${
                 isExiting
-                  ? "scale-95 opacity-0 blur-sm"
-                  : "scale-100 opacity-100 blur-0"
+                  ? "opacity-0 blur-sm"
+                  : "opacity-100 blur-0"
               }`}
+            style={{
+              transform: `translate(-50%, -50%) scale(${sceneScale})`,
+              transformOrigin: "center",
+            }}
           >
 
             {/* Interactive code editor */}
@@ -278,10 +334,11 @@ export default function Home() {
             </div>
 
             {/* Developer Introduction */}
-            <div className="flex min-w-0 flex-col items-start gap-2">
+            <div className="relative isolate flex min-w-0 flex-col items-start gap-2">
+                <IntroAtmosphere />
 
               {/*  */}
-              <div className="mt-8 flex flex-col items-start gap-2">
+              <div className="relative z-10 mt-8 flex flex-col items-start gap-2 [@media(max-height:850px)]:mt-2">
 
                 {/* Baybayin Symbol */}
                 <span className="mb-3 font-mono text-4xl text-[#F5C542]">
@@ -304,7 +361,7 @@ export default function Home() {
                 </p>
                 
                 {/* Introduction */}
-                <div className="mt-10 max-w-[340px]">
+                <div className="mt-10 max-w-[340px] [@media(max-height:850px)]:mt-4">
                   <div className="mb-6 h-px w-10 bg-[#494538]" />
                     <p className="font-mono text-[12px] leading-6 text-[#E6DDC6]">
                       I build digital experiences,
@@ -313,7 +370,7 @@ export default function Home() {
                     </p>
 
                     {/* Specialties */}
-                    <div className="mt-8 flex flex-col gap-2 font-mono text-[10px] tracking-[0.1em] text-[#92958B]">
+                    <div className="mt-8 flex flex-col gap-2 font-mono text-[10px] tracking-[0.1em] text-[#92958B] [@media(max-height:850px)]:mt-3">
                       <p><span className="text-[#D94B43]">//</span> WEB APPLICATIONS</p>
                       <p><span className="text-[#D94B43]">//</span> CREATIVE SYSTEMS</p>
                       <p><span className="text-[#D94B43]">//</span> OPEN SOURCE</p>
@@ -322,7 +379,7 @@ export default function Home() {
 
                 {/* Enter System */}
                 {!hasEntered && (
-                  <div className="mt-10 flex flex-col gap-3">
+                  <div className="mt-10 flex flex-col gap-3 [@media(max-height:850px)]:mt-4">
                     <div className="flex items-center gap-5">
                       <button
                         type="button"
@@ -346,13 +403,13 @@ export default function Home() {
                 )}
 
                 {/* System Status */}
-                <p className="mt-5 font-mono text-[10px] tracking-[0.15em] text-[#F5C542]">
+                <p className="mt-5 font-mono text-[10px] tracking-[0.15em] text-[#F5C542] [@media(max-height:850px)]:mt-2">
                   ● {message.slice(0, visibleCount)}
                   <span className="cursor-blink">_</span>
                 </p>
 
                 {/* System  Readout */}
-                <div className="mt-10 w-full max-w-[340px] border-t border-[#494538] pt-5">
+                <div className="mt-10 w-full max-w-[340px] border-t border-[#494538] pt-5 [@media(max-height:850px)]:mt-4">
 
                   <p className="mb-5 font-mono text-[10px] tracking-[0.15em] text-[#92958B]">
                     SYSTEM READOUT

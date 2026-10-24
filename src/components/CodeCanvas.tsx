@@ -77,11 +77,10 @@ export default function CodeCanvas({
         const logicalHeight = 260;
 
         const resizeCanvas = () => {
-            const rect = canvas.getBoundingClientRect();
             const pixelRatio = window.devicePixelRatio || 1;
 
-            const width = Math.round(rect.width* pixelRatio);
-            const height = Math.round(rect.height * pixelRatio);
+            const width = Math.round(canvas.clientWidth * pixelRatio);
+            const height = Math.round(canvas.clientHeight * pixelRatio);
 
             if (canvas.width !== width || canvas.height !== height) {
                 canvas.width = width;
@@ -258,7 +257,7 @@ export default function CodeCanvas({
 
         updateEditorInfo();
 
-        const visibleLineCount = Math.ceil((canvas.height) / lineHeight) + 1;
+        const visibleLineCount = Math.ceil(logicalHeight / lineHeight) + 1;
 
         const getVisibleLines = (start: number) => {
             return Array.from(
@@ -678,14 +677,14 @@ export default function CodeCanvas({
                 startEditing(true);
             }
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, logicalWidth, logicalHeight);
 
             if (hoveredRow !== null){
                 const highlightY = topPadding + hoveredRow * lineHeight - lineHeight + 3;
                 
                 ctx.fillStyle = "rgba(245, 197, 66, 0.05)";
 
-                ctx.fillRect(0, highlightY, canvas.width, lineHeight);
+                ctx.fillRect(0, highlightY, logicalWidth, lineHeight);
             }
 
             ctx.font = `${fontSize}px ${canvasFont}`;
@@ -794,7 +793,7 @@ export default function CodeCanvas({
 
             ctx.globalCompositeOperation = "destination-out";
 
-            const edgeFade = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            const edgeFade = ctx.createLinearGradient(0, 0, 0, logicalHeight);
 
             edgeFade.addColorStop(0, "rgba(0, 0, 0, 0.85)");
             edgeFade.addColorStop(0.12, "rgba(0, 0, 0, 0)");
@@ -802,7 +801,7 @@ export default function CodeCanvas({
             edgeFade.addColorStop(1, "rgba(0, 0, 0, 0.85)");
 
             ctx.fillStyle = edgeFade;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
             ctx.restore();
 
