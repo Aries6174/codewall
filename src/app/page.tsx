@@ -285,7 +285,7 @@ export default function Home() {
 
                 {/* Baybayin Symbol */}
                 <span className="mb-3 font-mono text-4xl text-[#F5C542]">
-                  ᜀᜇ᜔ᜍᜒᜀᜈ᜔
+                  ᜀᜍᜒᜁᜐ᜔
                 </span>
                 
                 {/* Developer Name */}
@@ -302,6 +302,40 @@ export default function Home() {
                 <p className="font-mono text-[10px] tracking-[0.18] text-[#92958B]">
                   BASED IN THE PHILIPPINES
                 </p>
+                
+                {/* Introduction */}
+                <div className="mt-10 max-w-[340px]">
+                  <div className="mb-6 h-px w-10 bg-[#494538]" />
+                    <p className="font-mono text-[12px] leading-6 text-[#E6DDC6]">
+                      I build digital experiences,
+                      explore emerging technologies,
+                      and turn ideas into real solutions.
+                    </p>
+
+                    {/* Specialties */}
+                    <div className="mt-8 flex flex-col gap-2 font-mono text-[10px] tracking-[0.1em] text-[#92958B]">
+                      <p><span className="text-[#D94B43]">//</span> WEB APPLICATIONS</p>
+                      <p><span className="text-[#D94B43]">//</span> CREATIVE SSYTEMS</p>
+                      <p><span className="text-[#D94B43]">//</span> OPEN SOURCE</p>
+                    </div>
+                </div>
+
+                {/* Enter System */}
+                {!hasEntered && (
+                  <button
+                    type="button"
+                    onClick={enterSystem}
+                    className="mt-10 border border-[#F5C542] px-8 py-4 font-mono text-[11px] tracking-[0.2em] text-[#F5C542] transition-colors duration-300 hover:bg-[#F5C542] hover:text-[#0B0C0B]">
+                      [ ENTER SYSTEM ]
+                    </button>
+                )}
+
+                {/* System Status */}
+                <p className="mt-5 font-mono text-[10px] tracking-[0.15em] text-[#F5C542]">
+                  ● {message.slice(0, visibleCount)}
+                  <span className="cursor-blink">_</span>
+                </p>
+
               </div>
             </div>  
           </div>
