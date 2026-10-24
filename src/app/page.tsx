@@ -8,6 +8,7 @@ import IntroTopBar from "@/components/IntroTopBar";
 import SecondaryEditorPane from "@/components/SecondaryEditorPane";
 import IntroTerminal, { type IntroTerminalHandle } from "@/components/IntroTerminal";
 import IntroAtmosphere from "@/components/IntroAtmosphere"
+import IntroSidebar from "@/components/IntroSidebar";
 
 type PatchPhase = "idle" | "running" | "complete";
 
@@ -265,8 +266,8 @@ export default function Home() {
             ref={sceneRef}
             className={`absolute left-1/2 top-[calc(50%+24px)]
               grid w-[1250px]
-              grid-cols-[minmax(0,700px)_minmax(0,1fr)]
-              items-start gap-10 px-4
+              grid-cols-[160px_minmax(0,640px)_minmax(0,1fr)]
+              items-start gap-6 px-4
               transition-[opacity,filter] duration-700 ease-in-out
               ${
                 isExiting
@@ -278,6 +279,10 @@ export default function Home() {
               transformOrigin: "center",
             }}
           >
+            <div className="min-w-0 self-stretch">
+              <IntroSidebar />
+            </div>
+
 
             {/* Interactive code editor */}
             <div className="flex min-w-0 flex-col item-start gap-4">
