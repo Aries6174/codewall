@@ -60,7 +60,7 @@ export default function IntroSidebar() {
             {/* Location */}
             <div className="flex flex-col gap-3">
 
-                <IntroLocationGraphic />
+                <IntroLocationGraphic marker={{ x: 92, y:129 }} />
 
                 <div className="border-t border-[#494538] pt-3">
                     <div className="flex items-center justify-between font-mono text-[9px]">

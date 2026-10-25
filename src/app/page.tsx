@@ -222,11 +222,24 @@ export default function Home() {
 
       if (!sceneWidth || !sceneHeight) return;
 
+      const widthScale = availableWidth / sceneWidth;
+      const heightScale = availableHeight / sceneHeight;
+
       const nextScale = Math.min(
         1,
         availableWidth / sceneWidth,
         availableHeight / sceneHeight
       );
+
+      console.table({
+        availableWidth,
+        availableHeight,
+        sceneWidth,
+        sceneHeight,
+        widthScale,
+        heightScale,
+        nextScale,
+      });
 
       setSceneScale(Math.max(0.1, nextScale));
     };
@@ -262,11 +275,66 @@ export default function Home() {
           />
 
           {/* Central intro content */}
+
+          {/* Mobile introduction */}
+          <section
+            className={`absolute inset-x-6 top-1/2
+              -translate-y-1/2 text-center
+              min-[900px]:hidden
+              transition-[opacity,filter] duration-700
+              ${
+                isExiting
+                  ? "opacity-0 blur-sm"
+                  : "opacity-100 blur-0"
+              }`}
+          >
+            <span className="font-mono text-4xl text-[#F5C542]">
+              ᜀᜍᜒᜁᜐ᜔
+            </span>
+
+            <h1 className="mt-5 font-mono text-3xl font-semibold tracking-[0.15em] text-[#E6DDC9]">
+              ADRIAN.JS
+            </h1>
+
+            <p className="mt-3 font-mono text-[10px] tracking-[0.2em] text-[#92958B]">
+              SOFTWARE DEVELOPER
+            </p>
+
+            <p className="mt-1 font-mono text-[10px] text-[#92958B]">
+              BASED IN THE PHILIPPINES
+            </p>
+
+            <p className="mx-auto mt-8 max-w-xs font-mono text-xs leading-6 text-[#E6DDC9]">
+              I build digital experiences, explore emerging
+              technologies, and turn ideas into real solutions.
+            </p>
+
+            {!hasEntered && (
+              <button
+                type="button"
+                onClick={enterSystem}
+                className="mt-9 border border-[#F5C542]
+                  px-8 py-4 font-mono text-[11px]
+                  tracking-[0.2em] text-[#F5C542]"
+              >
+                [ ENTER SYSTEM ]
+              </button>
+            )}
+
+            <p className="mt-6 font-mono text-[10px] tracking-widest text-[#F5C542]">
+              ● {message.slice(0, visibleCount)}
+              <span className="cursor-blink">_</span>
+            </p>
+          </section>
+
           <div
             ref={sceneRef}
             className={`absolute left-1/2 top-[calc(50%+24px)]
-              grid w-[1250px]
-              grid-cols-[160px_minmax(0,640px)_minmax(0,1fr)]
+              hidden w-[1000px]
+              grid-cols-[600px_minmax(0,1fr)]
+              min-[900px]:grid
+              min-[1101px]:w-[1250px]
+              min-[1101px]:grid-cols-[160px_minmax(0,640px)_minmax(0,1fr)]
               items-start gap-6 px-4
               transition-[opacity,filter] duration-700 ease-in-out
               ${
@@ -279,7 +347,7 @@ export default function Home() {
               transformOrigin: "center",
             }}
           >
-            <div className="min-w-0 self-stretch">
+            <div className="hidden min-w-0 self-stretch min-[1101px]:block">
               <IntroSidebar />
             </div>
 
