@@ -72,3 +72,19 @@ body {
     animation: markerPulse 2s ease-out infinite;
   }
 }
+
+@keyframes moonGlowPulse {
+  0%, 100% {
+    opacity: 0.9;
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .moon-glow-pulse {
+    animation: moonGlowPulse 7s ease-in-out infinite;
+  }
+}

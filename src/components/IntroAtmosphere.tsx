@@ -19,7 +19,7 @@ export default function IntroAtmosphere() {
                 style={{
                     backgroundImage: `
                         linear-gradient(#494538 1px, transparent 1px),
-                        linear-gradient(90deg, #494538, transparent 1px)
+                        linear-gradient(90deg, #494538 1px, transparent 1px)
                     `,
                     backgroundSize: "32px 32px",
                     maskImage:
@@ -46,7 +46,7 @@ export default function IntroAtmosphere() {
             </defs>
 
             {/* Moonlight */}
-            <circle cx="385" cy="135" r="130" fill="url(#landscapeGlow)" />
+            <circle cx="385" cy="135" r="130" fill="url(#landscapeGlow)" className="moon-glow-pulse"/>
             <circle cx="385" cy="135" r="42" fill="url(#landscapeMoon)" />
 
             {/* Distant mountains */}

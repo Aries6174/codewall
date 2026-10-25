@@ -5,9 +5,6 @@ const nextConfig: NextConfig = {
     agentUpgrade: "security",
   },
   devIndicators: false,
-  experimental: {
-    agentUpgrade: "security"
-  }
 };
 
 export default nextConfig;
