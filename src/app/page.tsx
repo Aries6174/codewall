@@ -334,11 +334,10 @@ export default function Home() {
           <div
             ref={sceneRef}
             className={`absolute z-10 left-1/2 top-[calc(50%+24px)]
-              hidden w-[1000px]
-              grid-cols-[600px_minmax(0,1fr)]
+              hidden w-[calc(100vw-48px)] max-w-[1520px]
+              grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]
               min-[900px]:grid
-              min-[1101px]:w-[1250px]
-              min-[1101px]:grid-cols-[160px_minmax(0,640px)_minmax(0,1fr)]
+              min-[1101px]:grid-cols-[140px_minmax(0,2.4fr)_minmax(0,0.85fr)]
               items-start gap-6 px-4
               transition-[opacity,filter] duration-700 ease-in-out
               ${
@@ -347,7 +346,7 @@ export default function Home() {
                   : "opacity-100 blur-0"
               }`}
             style={{
-              transform: `translate(-50%, -50%) scale(${sceneScale})`,
+              transform: `translate(calc(-50% - 6vw), -50%) scale(${sceneScale})`,
               transformOrigin: "center",
             }}
           >
@@ -360,7 +359,7 @@ export default function Home() {
             <div className="flex min-w-0 flex-col items-start gap-4">
 
               {/* CodeCanvas container */}
-              <div className="relative w-full border max-w-[700px] overflow-hidden">
+              <div className="relative w-full min-w-0 overflow-hidden border">
 
                 <CodeCanvas
                   activeCommand={terminalCommand}
@@ -396,7 +395,7 @@ export default function Home() {
               </div>
 
               {/* IntroTerminal stays BELOW CodeCanvas */}
-              <div className="w-full border max-w-[700px]">
+              <div className="w-full min-w-0 border">
                 <IntroTerminal
                   ref={terminalRef}
                   onCommand={handleTerminalCommand}
@@ -408,7 +407,7 @@ export default function Home() {
                 />
               </div>
 
-              <div className="w-full max-w-[700px]">
+              <div className="w-full min-w-0">
                 <IntroKeyboard />
               </div>
 
