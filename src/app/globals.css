@@ -152,3 +152,38 @@ body {
     animation: landscapeWaterShimmer 6s ease-in-out infinite;
   }
 }
+
+@keyframes landscapeMistDrift {
+  0% {
+    transform: translateX(-40px);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  55% {
+    opacity: 0.18;
+  }
+
+  85% {
+    opacity: 0.08;
+  }
+
+  100% {
+    transform: translateX(120px);
+    opacity: 0;
+  }
+}
+
+.landscape-mist {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landscape-mist {
+    animation: landscapeMistDrift 18s linear infinite;
+  }
+}

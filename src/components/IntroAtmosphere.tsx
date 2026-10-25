@@ -8,6 +8,15 @@ type IntroAtmosphereProps = {
 export default function IntroAtmosphere({
   isExiting,
 }: IntroAtmosphereProps) {
+
+    const waterMask= `
+    radial-gradient(
+        ellipse 16% 27% at 80% 73%
+        black 25%
+        transparent 100%
+        )
+    `;
+
   return (
     <div
       aria-hidden="true"
@@ -63,6 +72,24 @@ export default function IntroAtmosphere({
                     `,
                 }}
             />
+
+            {/* Slowly drifting mountain mist */}
+            <div
+            className="landscape-mist pointer-events-none absolute
+                left-[59%] top-[43%] h-[22%] w-[36%]
+                rounded-full blur-2xl"
+            style={{
+                background: `
+                radial-gradient(
+                    ellipse,
+                    rgba(230, 221, 201, 0.14) 0%,
+                    rgba(178, 147, 91, 0.08) 45%,
+                    transparent 75%
+                )
+                `,
+            }}
+            />
+
         </div>
 
         
@@ -74,20 +101,8 @@ export default function IntroAtmosphere({
         sizes="100vw"
         className="landscape-water-shimmer object-contain object-right"
         style={{
-            maskImage: `
-            radial-gradient(
-                ellipse 13% 32% at 82% 7%,
-                black 10%,
-                transparent 100%
-            )
-            `,
-            WebkitMaskImage: `
-            radial-gradient(
-                ellipse 16% 27% at 80% 73%,
-                black 25%,
-                transparent 100%
-            )
-            `,
+            maskImage: waterMask,
+            WebkitMaskImage: waterMask,
             filter: "brightness(1.35) saturate(1.15)",
         }}
         />
