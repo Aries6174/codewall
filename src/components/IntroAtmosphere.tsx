@@ -11,9 +11,9 @@ export default function IntroAtmosphere({
 
     const waterMask= `
     radial-gradient(
-        ellipse 16% 27% at 80% 73%
-        black 25%
-        transparent 100%
+        ellipse 16% 27% at 80% 73%,
+        black 25%,
+        transparent 100%,
         )
     `;
 

@@ -9,6 +9,7 @@ import SecondaryEditorPane from "@/components/SecondaryEditorPane";
 import IntroTerminal, { type IntroTerminalHandle } from "@/components/IntroTerminal";
 import IntroAtmosphere from "@/components/IntroAtmosphere"
 import IntroSidebar from "@/components/IntroSidebar";
+import IntroKeyboard from "@/components/IntroKeyboard";
 
 type PatchPhase = "idle" | "running" | "complete";
 
@@ -405,6 +406,10 @@ export default function Home() {
                   secondaryExecutionComplete={secondaryExecutionComplete}
                   isVisitorIdle={isVisitorIdle}
                 />
+              </div>
+
+              <div className="w-full max-w-[700px]">
+                <IntroKeyboard />
               </div>
 
             </div>
