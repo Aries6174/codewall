@@ -285,7 +285,7 @@ export default function Home() {
 
 
             {/* Interactive code editor */}
-            <div className="flex min-w-0 flex-col item-start gap-4">
+            <div className="flex min-w-0 flex-col items-start gap-4">
 
               {/* CodeCanvas container */}
               <div className="relative w-full border max-w-[700px] overflow-hidden">

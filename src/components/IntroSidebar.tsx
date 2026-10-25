@@ -1,3 +1,5 @@
+import IntroLocationGraphic from "./IntroLocationGraphic";
+
 export default function IntroSidebar() {
     const navigation = [
         { number: "01", label: "HOME" },
@@ -8,41 +10,74 @@ export default function IntroSidebar() {
 
     return (
         <aside className="flex h-full flex-col justify-between border-r border-[#494538] pr-5 font-mono">
+            
             {/* Navigation */}
-            <nav aria-label="Portfolio navigation" className="flex flex-col gap-5">
-                {navigation.map((item, index) => (
-                    <div
-                        key={item.number}
-                        className="flex items-center gap-4 text-[11px]"
-                    >
-                        <span className="text-[#D94B43]">
-                            {item.number}
-                        </span>
+            <nav aria-label="Portfolio navigation" className="flex flex-col">
 
-                        <span
-                            className={
-                                index === 0
-                                ? "text-[#F5C542]"
-                                : "text-[#92958B]"
-                            }
-                        >
-                            {item.label}
-                        </span>
-                    </div>
+            {/* Section header */}
+            <div className="mb-5 flex items-center justify-between border-b border-[#494538] pb-3">
+                <span className="text-[9px] tracking-[0.15em] text-[#92958B]">
+                NAVIGATION
+                </span>
+
+                <span className="text-[9px] text-[#F5C542]">
+                [ 01 / 04 ]
+                </span>
+            </div>
+
+            {/* Navigation items */}
+            <div className="flex flex-col gap-5">
+                {navigation.map((item, index) => (
+                <div
+                    key={item.number}
+                    className="flex items-center gap-3 text-[11px]"
+                >
+                    <span
+                    className={`h-3.5 w-[2px] ${
+                        index === 0 ? "bg-[#F5C542]" : "bg-transparent"
+                    }`}
+                    />
+
+                    <span className="text-[#D94B43]">
+                    {item.number}
+                    </span>
+
+                    <span
+                    className={
+                        index === 0
+                        ? "text-[#F5C542]"
+                        : "text-[#92958B]"
+                    }
+                    >
+                    {item.label}
+                    </span>
+                </div>
                 ))}
+            </div>
+
             </nav>
 
             {/* Location */}
-                <div className="flex flex-col gap-2 text-[10px]">
-                    <span className="text-[#F5C542]">
-                        PH / 063
-                    </span>
+            <div className="flex flex-col gap-3">
 
-                    <span className="text-[#92958B]">
+                <IntroLocationGraphic />
+
+                <div className="border-t border-[#494538] pt-3">
+                    <div className="flex items-center justify-between font-mono text-[9px]">
+                        <span className="text-[#F5C542]">
+                            PH / 063
+                        </span>
+
+                        <span className="text-[#92958B]">
+                            VISAYAS
+                        </span>
+                    </div>
+
+                    <p className="mt-2 font-mono text-[9px] text-[#92958B]">
                         BASED IN THE PHILIPPINES
-                    </span>
+                    </p>
                 </div>
-
+            </div>
         </aside>
     );
 }
