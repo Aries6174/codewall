@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b0c0b;
+  --background: #020403;
   --foreground: #E6ddc9;
 
   --panel: #171816;
@@ -86,5 +86,69 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   .moon-glow-pulse {
     animation: moonGlowPulse 7s ease-in-out infinite;
+  }
+}
+
+/* Slow parallax movement for distant mountains */
+@keyframes distantMountainDrift {
+  0%, 100% {
+    transform: translateX(-4px) scale(1.04);
+  }
+
+  50% {
+    transform: translateX(4px) scale(1.04);
+  }
+}
+
+.distant-mountain-drift {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .distant-mountain-drift {
+    animation: distantMountainDrift 18s ease-in-out infinite;
+  }
+}
+
+/* Animated landscape moonlight */
+@keyframes landscapeMoonBreath {
+  0%, 100% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.landscape-moon-glow {
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landscape-moon-glow {
+    animation: landscapeMoonBreath 8s ease-in-out infinite;
+  }
+}
+
+/* Animated water reflections */
+@keyframes landscapeWaterShimmer {
+  0%, 100% {
+    opacity: 0.08;
+  }
+
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.landscape-water-shimmer {
+  opacity: 0.08;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landscape-water-shimmer {
+    animation: landscapeWaterShimmer 6s ease-in-out infinite;
   }
 }

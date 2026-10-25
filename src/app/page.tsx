@@ -268,6 +268,9 @@ export default function Home() {
       {/* INTRO SCREEN */}
       {!showPortfolio && (
         <>
+          {/* Full-screen landscape background */}
+          <IntroAtmosphere isExiting={isExiting} />
+
           {/* Top system bar */}
           <IntroTopBar
             hasEntered={hasEntered}
@@ -329,7 +332,7 @@ export default function Home() {
 
           <div
             ref={sceneRef}
-            className={`absolute left-1/2 top-[calc(50%+24px)]
+            className={`absolute z-10 left-1/2 top-[calc(50%+24px)]
               hidden w-[1000px]
               grid-cols-[600px_minmax(0,1fr)]
               min-[900px]:grid
@@ -408,7 +411,6 @@ export default function Home() {
 
             {/* Developer Introduction */}
             <div className="relative isolate flex min-w-0 flex-col items-start gap-2">
-                <IntroAtmosphere />
 
               {/*  */}
               <div className="relative z-10 mt-8 flex flex-col items-start gap-2 [@media(max-height:850px)]:mt-2">

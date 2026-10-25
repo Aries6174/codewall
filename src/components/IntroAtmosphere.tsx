@@ -1,75 +1,100 @@
-export default function IntroAtmosphere() {
-    return (
+
+import Image from "next/image";
+
+type IntroAtmosphereProps = {
+  isExiting: boolean;
+};
+
+export default function IntroAtmosphere({
+  isExiting,
+}: IntroAtmosphereProps) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none absolute inset-0 z-0
+        hidden overflow-hidden bg-[#020202]
+        min-[900px]:block
+        transition-opacity duration-700
+        ${isExiting ? "opacity-0" : "opacity-100"}`}
+    >
+      {/* Background image */}
+      <Image
+        src="/images/moonlit-landscape-wide.webp"
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="object-contain object-right"
+      />
+
+      {/* Dark overlay to preserve UI readability */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(
+            to right,
+            #020202 0%,
+            rgba(2, 2, 2, 0.98) 30%,
+            rgba(2, 2, 2, 0.9) 55%,
+            rgba(2, 2, 2, 0.78) 70%,
+            rgba(2, 2, 2, 0.3) 100%
+          )`,
+        }}
+      />
+
+        {/* Animated moonlight - aligned with the image*/}
         <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+            className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2"
+            style={{
+                width: "min(100%, 177.68dvh)",
+                aspectRatio: "1672 / 941",
+            }}
         >
-            {/* Subtle golden atmosphere */}
             <div
-                className="absolute -right-32 top-0 h-[420px] w-[420px] rounded-full opacity-30 blur-3xl"
+                className="landscape-moon-glow pointer-events-none absolute inset-0"
                 style={{
-                    background:
-                    "radial-gradient(circle, rgba(245, 197, 66, 0.16) 0%, transparent 70%)",
-                }}
-            />
-
-            {/* Technical Background grid */}
-            <div
-                className="absolute inset-0 opacity-[0.12]"
-                style={{
-                    backgroundImage: `
-                        linear-gradient(#494538 1px, transparent 1px),
-                        linear-gradient(90deg, #494538 1px, transparent 1px)
+                    background: `
+                    radial-gradient(
+                        circle 200px at 86% 29%,
+                        rgba(245, 197, 66, 0.22) 0%,
+                        rgba(245, 197, 66, 0.08) 45%,
+                        transparent 100%
+                    )
                     `,
-                    backgroundSize: "32px 32px",
-                    maskImage:
-                    "linear-gradient(to left, black, transparent 85%)",
                 }}
             />
- 
-            {/* Moonlit landscape */}
-            <svg
-            viewBox="0 0 500 280"
-            aria-hidden="true"
-            className="absolute -bottom-8 -right-20 h-[280px] w-[500px] opacity-40"
-            >
-            <defs>
-                <radialGradient id="landscapeGlow">
-                <stop offset="0%" stopColor="#F5C542" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#F5C542" stopOpacity="0" />
-                </radialGradient>
-
-                <linearGradient id="landscapeMoon" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#F5C542" />
-                <stop offset="100%" stopColor="#7A5924" />
-                </linearGradient>
-            </defs>
-
-            {/* Moonlight */}
-            <circle cx="385" cy="135" r="130" fill="url(#landscapeGlow)" className="moon-glow-pulse"/>
-            <circle cx="385" cy="135" r="42" fill="url(#landscapeMoon)" />
-
-            {/* Distant mountains */}
-            <path
-                d="M0 210 L60 170 L105 190 L160 145 L215 175 L270 150 L330 185 L390 140 L445 170 L500 145 V280 H0 Z"
-                fill="#28291F"
-            />
-
-            {/* Foreground mountains */}
-            <path
-                d="M0 245 L75 205 L140 225 L210 180 L285 215 L345 185 L410 225 L470 195 L500 210 V280 H0 Z"
-                fill="#10120F"
-            />
-
-            {/* Golden reflections */}
-            <path
-                d="M290 260 Q390 250 490 260"
-                stroke="#F5C542"
-                strokeOpacity="0.35"
-                fill="none"
-            />
-            </svg>
-
         </div>
-    );
+
+        
+        {/* Animated water reflections */}
+        <Image
+        src="/images/moonlit-landscape-wide.webp"
+        alt=""
+        fill
+        sizes="100vw"
+        className="landscape-water-shimmer object-contain object-right"
+        style={{
+            maskImage: `
+            radial-gradient(
+                ellipse 13% 32% at 82% 7%,
+                black 10%,
+                transparent 100%
+            )
+            `,
+            WebkitMaskImage: `
+            radial-gradient(
+                ellipse 16% 27% at 80% 73%,
+                black 25%,
+                transparent 100%
+            )
+            `,
+            filter: "brightness(1.35) saturate(1.15)",
+        }}
+        />
+
+
+    </div>
+
+    
+  );
 }
