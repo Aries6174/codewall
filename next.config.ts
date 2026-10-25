@@ -1,6 +1,9 @@
-import type { NextConfig } from "next";
+﻿import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    agentUpgrade: "security",
+  },
   devIndicators: false,
   experimental: {
     agentUpgrade: "security"
@@ -8,3 +11,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
