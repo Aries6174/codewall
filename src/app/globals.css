@@ -75,7 +75,7 @@ body {
 
 @keyframes moonGlowPulse {
   0%, 100% {
-    opacity: 0.9;
+    opacity: 0.45;
   }
 
   50% {
