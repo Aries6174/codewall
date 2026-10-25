@@ -308,6 +308,7 @@ export default function IntroTerminal({
         commandIndex,
         visibleCount,
         currentCommand,
+        typingFrames,
         onCommand,
         patchPhase,
         secondaryEditComplete,

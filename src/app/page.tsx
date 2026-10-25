@@ -21,7 +21,6 @@ export default function Home() {
   const [secondaryVisible, setSecondaryVisible] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
   const [hasEntered, setHasEntered] = useState(false);
-  const [signalDetected, setSignalDetected] = useState(false);
   const [showPortfolio, setShowPortfolio] = useState(false);
   const [secondaryEditComplete, setSecondaryEditComplete] = useState(false);
   const [secondaryExecutionComplete, setSecondaryExecutionComplete] = useState(false);
@@ -224,6 +223,7 @@ export default function Home() {
 
       const widthScale = availableWidth / sceneWidth;
       const heightScale = availableHeight / sceneHeight;
+
 
       const nextScale = Math.min(
         1,
@@ -444,9 +444,9 @@ export default function Home() {
 
                     {/* Specialties */}
                     <div className="mt-8 flex flex-col gap-2 font-mono text-[10px] tracking-[0.1em] text-[#92958B] [@media(max-height:850px)]:mt-3">
-                      <p><span className="text-[#D94B43]">//</span> WEB APPLICATIONS</p>
-                      <p><span className="text-[#D94B43]">//</span> CREATIVE SYSTEMS</p>
-                      <p><span className="text-[#D94B43]">//</span> OPEN SOURCE</p>
+                      <p><span className="text-[#D94B43]">{"//"}</span> WEB APPLICATIONS</p>
+                      <p><span className="text-[#D94B43]">{"//"}</span> CREATIVE SYSTEMS</p>
+                      <p><span className="text-[#D94B43]">{"//"}</span> OPEN SOURCE</p>
                     </div>
                 </div>
 

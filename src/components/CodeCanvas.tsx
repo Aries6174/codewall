@@ -830,7 +830,7 @@ export default function CodeCanvas({
             canvas.removeEventListener("mouseleave", handleMouseLeave);
             canvas.removeEventListener("wheel", handleWheel);
         };
-    }, [onPatchPhaseChange, onNavigationComplete]);
+    }, [onPatchPhaseChange, onNavigationComplete, charWidth]);
 
     
     return (
