@@ -10,6 +10,7 @@ import IntroTerminal, { type IntroTerminalHandle } from "@/components/IntroTermi
 import IntroAtmosphere from "@/components/IntroAtmosphere"
 import IntroSidebar from "@/components/IntroSidebar";
 import IntroKeyboard from "@/components/IntroKeyboard";
+import IntroMouse from "@/components/IntroMouse";
 
 type PatchPhase = "idle" | "running" | "complete";
 
@@ -30,6 +31,7 @@ export default function Home() {
   const terminalRef = useRef<IntroTerminalHandle>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
   const [sceneScale, setSceneScale] = useState(1);
+  const [activeInput, setActiveInput] = useState<"keyboard" | "mouse">("keyboard");
 
   // Message displayed underneath the editor
   const message = hasEntered
@@ -257,6 +259,28 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleMouseActivity = () => {
+      setActiveInput("mouse");
+    };
+
+    const handleKeyboardActivity = () => {
+      setActiveInput("keyboard");
+    };
+
+    window.addEventListener("pointermove", handleMouseActivity);
+    window.addEventListener("pointerdown", handleMouseActivity);
+    window.addEventListener("wheel", handleMouseActivity);
+    window.addEventListener("keydown", handleKeyboardActivity);
+
+    return () => {
+      window.removeEventListener("pointermove", handleMouseActivity);
+      window.removeEventListener("pointerdown", handleMouseActivity);
+      window.removeEventListener("wheel", handleMouseActivity);
+      window.removeEventListener("keydown", handleKeyboardActivity);
+    };
+  }, []);
+
   return (
     <main
       className={`relative bg-background text-foreground ${
@@ -317,9 +341,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={enterSystem}
-                className="mt-9 border border-[#F5C542]
-                  px-8 py-4 font-mono text-[11px]
-                  tracking-[0.2em] text-[#F5C542]"
+                className="border border-[#F5C542] px-8 py-4 font-mono text-[11px] tracking-[0.2em] text-[#F5C542] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-[#F5C542] hover:text-[#0B0C0B] hover:shadow-[0_0_18px_rgba(245,197,66,0.25)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F5C542] motion-reduce:transform-none"
               >
                 [ ENTER SYSTEM ]
               </button>
@@ -337,7 +359,7 @@ export default function Home() {
               hidden w-[calc(100vw-48px)] max-w-[1520px]
               grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]
               min-[900px]:grid
-              min-[1101px]:grid-cols-[140px_minmax(0,2.4fr)_minmax(0,0.85fr)]
+              min-[1101px]:grid-cols-[190px_minmax(0,2.7fr)_minmax(0,0.9fr)]
               items-start gap-6 px-4
               transition-[opacity,filter] duration-700 ease-in-out
               ${
@@ -346,7 +368,7 @@ export default function Home() {
                   : "opacity-100 blur-0"
               }`}
             style={{
-              transform: `translate(calc(-50% - 6vw), -50%) scale(${sceneScale})`,
+              transform: `translate(calc(-50% - 4vw), -50%) scale(${sceneScale})`,
               transformOrigin: "center",
             }}
           >
@@ -356,7 +378,7 @@ export default function Home() {
 
 
             {/* Interactive code editor */}
-            <div className="flex min-w-0 flex-col items-start gap-4">
+            <div className="flex min-w-0 flex-col items-start gap-[clamp(8px,1.3dvh,16px)]">
 
               {/* CodeCanvas container */}
               <div className="relative w-full min-w-0 overflow-hidden border">
@@ -407,17 +429,24 @@ export default function Home() {
                 />
               </div>
 
-              <div className="w-full min-w-0">
-                <IntroKeyboard />
+              <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_150px] items-start gap-3">
+               
+                <div className="min-w-0">
+                  <IntroKeyboard isMouseActive={activeInput === "mouse"} />
+                </div>
+
+                <div className="min-w-0">
+                  <IntroMouse isMouseActive={activeInput === "mouse"}/>
+                </div>
               </div>
 
             </div>
 
             {/* Developer Introduction */}
-            <div className="relative isolate flex min-w-0 flex-col items-start gap-2">
+            <div className="relative isolate flex min-w-0 self-stretch flex-col items-start gap-2">
 
               {/*  */}
-              <div className="relative z-10 mt-8 flex flex-col items-start gap-2 [@media(max-height:850px)]:mt-2">
+              <div className="relative z-10 mt-[clamp(8px,2dvh,32px)] flex w-full min-w-0 flex-1 flex-col items-start gap-[clamp(4px,0.7dvh,8px)] [text-shadow:0_2px_6px_rgba(0,0,0,0.95)]">
 
                 {/* Baybayin Symbol */}
                 <span className="mb-3 font-mono text-4xl text-[#F5C542]">
@@ -440,8 +469,8 @@ export default function Home() {
                 </p>
                 
                 {/* Introduction */}
-                <div className="mt-10 max-w-[340px] [@media(max-height:850px)]:mt-4">
-                  <div className="mb-6 h-px w-10 bg-[#494538]" />
+                <div className="mt-[clamp(12px,2.5dvh,32px)] w-full max-w-[340px]">
+                  <div className="mb-[clamp(8px,1.5dvh,24px)] h-px w-10 bg-[#494538]" />
                     <p className="font-mono text-[12px] leading-6 text-[#E6DDC6]">
                       I build digital experiences,
                       explore emerging technologies,
@@ -449,7 +478,7 @@ export default function Home() {
                     </p>
 
                     {/* Specialties */}
-                    <div className="mt-8 flex flex-col gap-2 font-mono text-[10px] tracking-[0.1em] text-[#92958B] [@media(max-height:850px)]:mt-3">
+                    <div className="mt-[clamp(10px,2dvh,28px)] flex flex-col gap-2 font-mono text-[10px] tracking-[0.1em] tracking-[0.1em] text-[#92958B]">
                       <p><span className="text-[#D94B43]">{"//"}</span> WEB APPLICATIONS</p>
                       <p><span className="text-[#D94B43]">{"//"}</span> CREATIVE SYSTEMS</p>
                       <p><span className="text-[#D94B43]">{"//"}</span> OPEN SOURCE</p>
@@ -458,7 +487,7 @@ export default function Home() {
 
                 {/* Enter System */}
                 {!hasEntered && (
-                  <div className="mt-10 flex flex-col gap-3 [@media(max-height:850px)]:mt-4">
+                  <div className="mt-[clamp(12px,2.5dvh,32px)] flex flex-col gap-3">
                     <div className="flex items-center gap-5">
                       <button
                         type="button"
@@ -488,31 +517,31 @@ export default function Home() {
                 </p>
 
                 {/* System  Readout */}
-                <div className="mt-10 w-full max-w-[340px] border-t border-[#494538] pt-5 [@media(max-height:850px)]:mt-4">
+                <div className="mt-[clamp(16px,3dvh,36px)] w-full max-w-[340px] border-t border-[#494538] pt-[clamp(10px,1.5dvh,20px)]">
 
                   <p className="mb-5 font-mono text-[10px] tracking-[0.15em] text-[#92958B]">
                     SYSTEM READOUT
                   </p>
 
-                  <div className="grid grid-cols-[120px_1fr] gap-y-3 font-mono text-[10px]">
+                  <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3 font-mono text-[10px]">
 
                     <span className="text-[#92958B]">› PATCH MODE</span>
-                    <span className="text-[#F5C542]">
+                    <span className="text-[#F5C542] text-right">
                       {patchPhase.toUpperCase()}
                     </span>
 
                     <span className="text-[#92958B]">› EDITOR MODE</span>
-                    <span className="text-[#F5C542]">
+                    <span className="text-[#F5C542] text-right">
                       {isSplit ? "SPLIT" : "SINGLE"}
                     </span>
 
                     <span className="text-[#92958B]">› SESSION</span>
-                    <span className="text-[#F5C542]">
+                    <span className="text-[#F5C542] text-right">
                       001
                     </span>
 
                     <span className="text-[#92958B]">› SYSTEM</span>
-                    <span className={hasEntered ? "text-[#F5C542]" : "text-[#D94B43]"}>
+                    <span className={`text-right ${hasEntered ? "text-[#F5C542]" : "text-[#D94B43]"}`}>
                       {hasEntered ? "INITIALIZING" :  "DORMANT"}
                     </span>
 

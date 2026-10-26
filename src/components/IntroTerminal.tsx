@@ -430,7 +430,7 @@ export default function IntroTerminal({
             {/* Terminal output */}
             <div
                 ref={terminalOutputRef}
-                className="mt-1.5 h-[105px] space-y-0.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[11px] leading-[15px]"
+                className="mt-1.5 h-[clamp(75px,12dvh,140px)] space-y-0.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[11px] leading-[15px]"
             >
                 <p className="text-[#92958B]">
                     <span className="mr-3 text-[#F5C542]">➜</span>

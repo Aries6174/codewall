@@ -15,7 +15,7 @@ export default function IntroLocationGraphic({
 }: IntroLocationGraphicProps) {
   return (
     <div className="w-full font-mono">
-      <div className="flex items-center justify-between text-[9px] tracking-widest">
+      <div className="flex items-center justify-between text-[11px] tracking-widest">
         <span className="text-[#92958B]">GEO / PH</span>
         <span className="text-[#F5C542]">063</span>
       </div>

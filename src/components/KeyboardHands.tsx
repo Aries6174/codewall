@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Point = {
   x: number;
@@ -34,6 +34,7 @@ type KeyboardHandsProps = {
     left: number | null;
     right: number | null;
   };
+  isMouseActive: boolean;
 };
 
 type AnimationState = {
@@ -168,14 +169,139 @@ export default function KeyboardHands({
   height,
   fingerTargets,
   homePositions,
+  isMouseActive,
 }: KeyboardHandsProps) {
   const [frame, setFrame] = useState<AnimationState>(emptyState);
   const frameRef = useRef<AnimationState>(emptyState());
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [mouseTarget, setMouseTarget] = useState<Point | null>(null);
+  const [mouseFingerTargets, setMouseFingerTargets] = useState<
+    Partial<Record<FingerName, Point>>
+  >({});
+  const [leftMousePressed, setLeftMousePressed] = useState(false);
+  const [rightMousePressed, setRightMousePressed] = useState(false);
 
-  const getRestingX = (side: HandSide) =>
-    side === "left"
-      ? (homePositions.left ?? width * 0.3) - 18
-      : (homePositions.right ?? width * 0.7) + 18;
+  void isMouseActive;
+
+  const getRestingX = useCallback(
+    (side: HandSide) =>
+      side === "left"
+        ? (homePositions.left ?? width * 0.3) - 18
+        : (homePositions.right ?? width * 0.7) + 18,
+    [homePositions.left, homePositions.right, width]
+  );
+
+  useEffect(() => {
+    if (!isMouseActive) return;
+
+    const keyboardSvg = svgRef.current;
+
+    const mouseSvg = document.querySelector<SVGSVGElement>(
+      "[data-intro-mouse]"
+    );
+
+    if (!keyboardSvg || !mouseSvg) return;
+
+    const updateMousePosition = () => {
+      const keyboardRect = keyboardSvg.getBoundingClientRect();
+      const mouseRect = mouseSvg.getBoundingClientRect();
+
+      if (
+        keyboardRect.width === 0 ||
+        keyboardRect.height === 0 ||
+        mouseRect.width === 0 ||
+        mouseRect.height === 0
+      ) {
+        return;
+      }
+
+      const scaleX = width / keyboardRect.width;
+      const scaleY = height / keyboardRect.height;
+
+      // Convert coordinates from the mouse SVG
+      // into the keyboard's SVG coordinate system.
+      const toKeyboardPoint = (
+        x: number,
+        y: number
+      ): Point => ({
+        x:
+          (mouseRect.left +
+            (x / 180) * mouseRect.width -
+            keyboardRect.left) *
+          scaleX,
+        y:
+          (mouseRect.top +
+            (y / 220) * mouseRect.height -
+            keyboardRect.top) *
+          scaleY,
+      });
+
+      // Wrist position on the mouse body
+      setMouseTarget(toKeyboardPoint(90, 185));
+
+      // Resting positions for each finger
+      setMouseFingerTargets({
+        index: toKeyboardPoint(68, 52),
+        middle: toKeyboardPoint(112,52),
+        ring: toKeyboardPoint(128, 72),
+        pinky: toKeyboardPoint(132, 87),
+        thumb: toKeyboardPoint(35, 81),
+      });
+    }
+
+    const observer = new ResizeObserver(updateMousePosition);
+
+    observer.observe(keyboardSvg);
+    observer.observe(mouseSvg);
+
+    window.addEventListener("resize", updateMousePosition);
+    window.addEventListener("scroll", updateMousePosition, true);
+
+    updateMousePosition();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateMousePosition);
+      window.removeEventListener("scroll", updateMousePosition, true);
+    };
+  }, [isMouseActive, width, height]);
+
+  useEffect(() => {
+    const handleMouseDown = (event: MouseEvent) => {
+      if (event.button === 0) {
+        setLeftMousePressed(true);
+      }
+
+      if (event.button === 2) {
+        setRightMousePressed(true);
+      }
+    };
+
+    const handleMouseUp = (event: MouseEvent) => {
+      if (event.button === 0) {
+        setLeftMousePressed(false);
+      }
+
+      if (event.button === 2) {
+        setRightMousePressed(false);
+      }
+    };
+
+    const resetButtons = () => {
+      setLeftMousePressed(false);
+      setRightMousePressed(false);
+    };
+
+    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("blur", resetButtons);
+
+    return () => {
+      window.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("blur", resetButtons);
+    };
+  }, []);
 
   // Animate all ten fingers independently.
   useEffect(() => {
@@ -210,53 +336,65 @@ export default function KeyboardHands({
         const restingX = getRestingX(side);
         const restingY = height - 22;
 
-        // Move the wrist only as far as necessary
-        // for the fingers to reach their keys.
-        const desiredShift: Point = { x: 0, y: 0 };
+        const mouseDestination =
+          side === "right" && isMouseActive
+            ? mouseTarget
+            : null;
+
+        // The right wrist travels to the mouse.
+        // Otherwise, both hands follow their keyboard targets.
+        const desiredShift: Point = mouseDestination
+          ? {
+              x: mouseDestination.x - restingX,
+              y: mouseDestination.y - restingY,
+            }
+          : { x: 0, y: 0 };
 
         // Several passes allow multiple fingers on
         // the same hand to influence wrist placement.
-        for (let pass = 0; pass < 8; pass++) {
-          for (const name of fingerNames) {
-            const id = `${side}-${name}`;
-            const target = fingerTargets[id];
 
-            if (!target) continue;
+        if (!mouseDestination) {
+          for (let pass = 0; pass < 8; pass++) {
+            for (const name of fingerNames) {
+              const id = `${side}-${name}`;
+              const target = fingerTargets[id];
 
-            const finger = layout[name];
+              if (!target) continue;
 
-            // Finger base with the proposed wrist shift.
-            const baseX =
-              restingX + finger.baseX + desiredShift.x;
+              const finger = layout[name];
 
-            const baseY =
-              restingY + finger.baseY + desiredShift.y;
+              // Finger base with the proposed wrist shift.
+              const baseX =
+                restingX + finger.baseX + desiredShift.x;
 
-            const dx = target.x - baseX;
-            const dy = target.y - baseY;
+              const baseY =
+                restingY + finger.baseY + desiredShift.y;
 
-            const distance = Math.hypot(dx, dy);
+              const dx = target.x - baseX;
+              const dy = target.y - baseY;
 
-            // Maximum distance this finger can reach.
-            const maxReach =
-              finger.upper + finger.lower - 2;
+              const distance = Math.hypot(dx, dy);
 
-            if (distance > maxReach) {
-              const correction =
-                (distance - maxReach) / distance;
+              // Maximum distance this finger can reach.
+              const maxReach =
+                finger.upper + finger.lower - 2;
 
-              // Move the wrist toward the key
-              // until the finger can reach it.
-              desiredShift.x += dx * correction;
-              desiredShift.y += dy * correction;
+              if (distance > maxReach) {
+                const correction =
+                  (distance - maxReach) / distance;
+
+                // Move the wrist toward the key
+                // until the finger can reach it.
+                desiredShift.x += dx * correction;
+                desiredShift.y += dy * correction;
+              }
             }
           }
+
+          // Safety limits for extreme key positions.
+          desiredShift.x = clamp(desiredShift.x, -120, 120);
+          desiredShift.y = clamp(desiredShift.y, -110, 30);
         }
-
-        // Safety limits for extreme key positions.
-        desiredShift.x = clamp(desiredShift.x, -120, 120);
-        desiredShift.y = clamp(desiredShift.y, -110, 30);
-
 
         const currentShift = previous.shifts[side];
 
@@ -265,6 +403,12 @@ export default function KeyboardHands({
           desiredShift,
           wristAmount
         );
+
+        // Distance the wrist moved during this animation frame.
+        const wristMovement: Point = {
+          x: nextShift.x - currentShift.x,
+          y: nextShift.y - currentShift.y,
+        };
 
         next.shifts[side] = nextShift;
 
@@ -286,15 +430,37 @@ export default function KeyboardHands({
             y: restingY + nextShift.y + finger.tipY,
           };
 
-          // Each finger has its own destination.
+          // When using the mouse, right-hand fingers
+          // return to their natural positions.
+          const mouseFingerPosition = mouseFingerTargets[name];
+
+          const isMouseClicking =
+            (name === "index" && leftMousePressed) ||
+            (name === "middle" && rightMousePressed);
+
           const destination =
-            fingerTargets[id] ?? restingTip;
+            side === "right" && mouseDestination && mouseFingerPosition
+              ? {
+                  x: mouseFingerPosition.x,
+                  y: mouseFingerPosition.y + (isMouseClicking ? 6 : 0),
+                }
+              : fingerTargets[id] ?? restingTip;
 
           const currentTip =
-            previous.tips[id] ?? restingTip;
+            previous.tips[id] ?? {
+              x: restingTip.x - wristMovement.x,
+              y: restingTip.y - wristMovement.y,
+            };
 
+          // Carry the finger along with the moving wrist.
+          const carriedTip: Point = {
+            x: currentTip.x + wristMovement.x,
+            y: currentTip.y + wristMovement.y,
+          };
+
+          // Smoothly adjust the finger toward its destination.
           const nextTip = moveToward(
-            currentTip,
+            carriedTip,
             destination,
             fingerAmount
           );
@@ -326,10 +492,13 @@ export default function KeyboardHands({
     return () => cancelAnimationFrame(animationFrame);
   }, [
     fingerTargets,
-    width,
     height,
-    homePositions.left,
-    homePositions.right,
+    getRestingX,
+    isMouseActive,
+    mouseTarget,
+    mouseFingerTargets,
+    leftMousePressed,
+    rightMousePressed,
   ]);
 
   const renderHand = (side: HandSide) => {
@@ -439,7 +608,18 @@ export default function KeyboardHands({
         bendAmount
       );
 
-      const active = Boolean(fingerTargets[id]);
+      const mouseClickActive =
+        side === "right" &&
+        isMouseActive &&
+        (
+          (name === "index" && leftMousePressed) ||
+          (name === "middle" && rightMousePressed)
+        );
+
+      const active =
+        mouseClickActive ||
+        (!(side === "right" && isMouseActive) &&
+          Boolean(fingerTargets[id]));
 
       return {
         name,
@@ -538,8 +718,10 @@ export default function KeyboardHands({
     );
   };
 
+
   return (
     <svg
+      ref={svgRef}
       viewBox={`0 0 ${width} ${height}`}
       className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
       aria-hidden="true"

@@ -16,11 +16,11 @@ export default function IntroSidebar() {
 
             {/* Section header */}
             <div className="mb-5 flex items-center justify-between border-b border-[#494538] pb-3">
-                <span className="text-[9px] tracking-[0.15em] text-[#92958B]">
+                <span className="text-[11px] tracking-[0.15em] text-[#92958B]">
                 NAVIGATION
                 </span>
 
-                <span className="text-[9px] text-[#F5C542]">
+                <span className="text-[11px] text-[#F5C542]">
                 [ 01 / 04 ]
                 </span>
             </div>
@@ -30,7 +30,7 @@ export default function IntroSidebar() {
                 {navigation.map((item, index) => (
                 <div
                     key={item.number}
-                    className="flex items-center gap-3 text-[11px]"
+                    className="flex items-center gap-3 text-[12px]"
                 >
                     <span
                     className={`h-3.5 w-[2px] ${
@@ -63,7 +63,7 @@ export default function IntroSidebar() {
                 <IntroLocationGraphic marker={{ x: 92, y:129 }} />
 
                 <div className="border-t border-[#494538] pt-3">
-                    <div className="flex items-center justify-between font-mono text-[9px]">
+                    <div className="flex items-center justify-between font-mono text-[11px]">
                         <span className="text-[#F5C542]">
                             PH / 063
                         </span>
@@ -73,7 +73,7 @@ export default function IntroSidebar() {
                         </span>
                     </div>
 
-                    <p className="mt-2 font-mono text-[9px] text-[#92958B]">
+                    <p className="mt-2 font-mono text-[10px] text-[#92958B]">
                         BASED IN THE PHILIPPINES
                     </p>
                 </div>

@@ -73,7 +73,7 @@ export default function CodeCanvas({
 
         if (!ctx) return;
 
-                const logicalWidth = 620;
+        let logicalWidth = 620;
         const logicalHeight = 260;
 
         const resizeCanvas = () => {
@@ -87,11 +87,15 @@ export default function CodeCanvas({
                 canvas.height = height;
             }
 
+            const scale = height / logicalHeight;
+            
+            logicalWidth = width / scale;
+
             ctx.setTransform(
-                width / logicalWidth,
+                scale,
                 0,
                 0,
-                height / logicalHeight,
+                scale,
                 0,
                 0
             );
@@ -862,7 +866,7 @@ export default function CodeCanvas({
                 ref={canvasRef}
                 width={620}
                 height={260}
-                className="block w-full aspect-[620/260]"
+                className="block w-full h-[clamp(180px, 30dvh, 285px)]"
             />
 
             <div className="flex items-center justify-between px-3 py-3">

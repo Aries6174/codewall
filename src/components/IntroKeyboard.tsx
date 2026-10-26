@@ -4,6 +4,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import KeyboardHands from "./KeyboardHands";
 
+
+type IntroKeyboardProps = {
+  isMouseActive: boolean;
+};
+
 type Point = {
   x: number;
   y: number;
@@ -107,7 +112,9 @@ function findFinger(key: string): string | null {
   return null;
 }
 
-export default function IntroKeyboard() {
+export default function IntroKeyboard({
+  isMouseActive,
+}: IntroKeyboardProps) {
   const keyboardRef = useRef<HTMLDivElement>(null);
   const pressedKeysRef = useRef<Set<string>>(new Set());
 
@@ -272,7 +279,7 @@ export default function IntroKeyboard() {
       {/* Keyboard */}
       <div
         ref={keyboardRef}
-        className="relative mx-auto mt-3 flex max-w-[520px] flex-col gap-[3px] pb-[110px]"
+        className="relative mx-auto mt-3 flex max-w-[620px] flex-col gap-[3px] pb-[clamp(95px,13dvh,140px)]"
       >
         {keyboardRows.map((row, rowIndex) => (
           <div key={rowIndex} className="flex gap-[3px]">
@@ -305,6 +312,7 @@ export default function IntroKeyboard() {
           height={keyboardSize.height}
           fingerTargets={fingerTargets}
           homePositions={homePositions}
+          isMouseActive={isMouseActive}
         />
       </div>
     </div>
