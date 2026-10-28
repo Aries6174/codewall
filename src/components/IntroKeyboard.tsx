@@ -7,6 +7,14 @@ import KeyboardHands from "./KeyboardHands";
 
 type IntroKeyboardProps = {
   isMouseActive: boolean;
+  mouseOffset: {
+    x: number;
+    y: number;
+  };
+  autoKeyEvent: {
+    key: string;
+    id: number;
+  } | null
 };
 
 type Point = {
@@ -75,6 +83,30 @@ const fingerGroups: Record<string, string[]> = {
   "right-thumb": ["alt-right"],
 };
 
+const shiftedKeys: Record<string, string> = {
+  "!": "1",
+  "@": "2",
+  "#": "3",
+  "$": "4",
+  "%": "5",
+  "^": "6",
+  "&": "7",
+  "*": "8",
+  "(": "9",
+  ")": "0",
+  "_": "-",
+  "+": "=",
+  "{": "[",
+  "}": "]",
+  "|": "\\",
+  ":": ";",
+  '"': "'",
+  "<": ",",
+  ">": ".",
+  "?": "/",
+  "~": "`",
+};
+
 // Convert browser keyboard events into our own
 // unique key identifiers.
 function normalizeKey(event: KeyboardEvent): string {
@@ -114,9 +146,12 @@ function findFinger(key: string): string | null {
 
 export default function IntroKeyboard({
   isMouseActive,
+  mouseOffset,
+  autoKeyEvent,
 }: IntroKeyboardProps) {
   const keyboardRef = useRef<HTMLDivElement>(null);
   const pressedKeysRef = useRef<Set<string>>(new Set());
+  const autoPressedRef = useRef<string[]>([]);
 
   const [pressedKeys, setPressedKeys] = useState<string[]>([]);
   const [fingerTargets, setFingerTargets] = useState<
@@ -155,6 +190,16 @@ export default function IntroKeyboard({
       const keyboardRect = keyboard.getBoundingClientRect();
       const keyRect = element.getBoundingClientRect();
 
+      // Prevent division by zero when the keyboard is hidden.
+      if (
+        keyboardRect.width === 0 ||
+        keyboardRect.height === 0 ||
+        keyboard.clientWidth === 0 ||
+        keyboard.clientHeight === 0
+      ) {
+        return null;
+      }
+
       const scaleX =
         keyboard.clientWidth / keyboardRect.width;
 
@@ -173,12 +218,19 @@ export default function IntroKeyboard({
     []
   );
 
-  // Synchronize all currently held keys
-  // with their respective fingers.
   const syncPressedKeys = useCallback(() => {
     const held = [...pressedKeysRef.current];
+
+    const activeKeys = [
+      ...new Set([
+        ...held,
+        ...autoPressedRef.current,
+      ]),
+    ];
+
     const targets: Record<string, Point> = {};
 
+    // Priority 1: Physical keyboard input
     for (const key of held) {
       const finger = findFinger(key);
       const position = getKeyPosition(key);
@@ -188,9 +240,73 @@ export default function IntroKeyboard({
       }
     }
 
-    setPressedKeys(held);
+    // Priority 2: Automatic CodeCanvas typing
+    for (const key of autoPressedRef.current) {
+      const finger = findFinger(key);
+      const position = getKeyPosition(key);
+
+      if (!finger || !position) continue;
+
+      // Keep the right hand available for mouse movement.
+      if (isMouseActive && finger.startsWith("right-")) {
+        continue;
+      }
+
+      // Physical input takes priority over automatic input.
+      if (targets[finger]) continue;
+
+      targets[finger] = position;
+    }
+
+    setPressedKeys(activeKeys);
     setFingerTargets(targets);
-  }, [getKeyPosition]);
+  }, [getKeyPosition, isMouseActive]);
+
+  useEffect(() => {
+    if (!autoKeyEvent) return;
+
+    const character = autoKeyEvent.key;
+    const shiftedKey = shiftedKeys[character];
+    const key = shiftedKey ?? character.toLowerCase();
+
+    const isUppercase =
+      character.length === 1 &&
+      character >= "A" &&
+      character <= "Z";
+
+    const needsShift =
+      isUppercase || shiftedKey !== undefined;
+
+    if (!getKeyPosition(key)) {
+      autoPressedRef.current = [];
+      syncPressedKeys();
+      return;
+    }
+
+    if (needsShift) {
+      // Use the opposite hand for Shift.
+      const finger = findFinger(key);
+
+      const shiftKey = finger?.startsWith("left-")
+        ? "shift-right"
+        : "shift-left";
+
+      autoPressedRef.current = [shiftKey, key];
+    } else {
+      autoPressedRef.current = [key];
+    }
+
+    syncPressedKeys();
+
+    const timeout = window.setTimeout(() => {
+      autoPressedRef.current = [];
+      syncPressedKeys();
+    }, 65);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [autoKeyEvent, getKeyPosition, syncPressedKeys]);
 
   // Measure keyboard dimensions and positions.
   useEffect(() => {
@@ -209,7 +325,7 @@ export default function IntroKeyboard({
         right: getKeyPosition("j")?.x ?? null,
       });
 
-      if (pressedKeysRef.current.size > 0) {
+      if (pressedKeysRef.current.size > 0 || autoPressedRef.current.length > 0) {
         syncPressedKeys();
       }
     };
@@ -250,6 +366,7 @@ export default function IntroKeyboard({
     // if the browser loses focus.
     const clearKeys = () => {
       pressedKeysRef.current.clear();
+      autoPressedRef.current =[];
       syncPressedKeys();
     };
 
@@ -313,6 +430,7 @@ export default function IntroKeyboard({
           fingerTargets={fingerTargets}
           homePositions={homePositions}
           isMouseActive={isMouseActive}
+          mouseOffset={mouseOffset}
         />
       </div>
     </div>

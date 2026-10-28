@@ -11,6 +11,8 @@ import IntroAtmosphere from "@/components/IntroAtmosphere"
 import IntroSidebar from "@/components/IntroSidebar";
 import IntroKeyboard from "@/components/IntroKeyboard";
 import IntroMouse from "@/components/IntroMouse";
+import PointerTracker from "@/components/PointerTracker"
+import PointerTelemetry from "@/components/PointerTelemetry";
 
 type PatchPhase = "idle" | "running" | "complete";
 
@@ -32,6 +34,27 @@ export default function Home() {
   const sceneRef = useRef<HTMLDivElement>(null);
   const [sceneScale, setSceneScale] = useState(1);
   const [activeInput, setActiveInput] = useState<"keyboard" | "mouse">("keyboard");
+  const [mouseOffset, setMouseOffset] = useState({
+    x: 0,
+    y: 0,
+  });
+  const lastPointerPosition = useRef<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const lastKeyboardActivity = useRef(-Infinity);
+  const [autoKeyEvent, setAutoKeyEvent] = useState<{
+    key: string;
+    id: number;
+  } | null>(null);
+  const lastTerminalStrokeRef = useRef(0);
+  const [autoInputSource, setAutoInputSource] = useState<
+    "EDITOR" | "TERMINAL" | "STANDBY" 
+  >("STANDBY");
+
+  const autoInputTimeoutRef = useRef<
+    ReturnType<typeof setTimeout> | null
+    >(null);
 
   // Message displayed underneath the editor
   const message = hasEntered
@@ -39,6 +62,11 @@ export default function Home() {
     : "SYSTEM DORMANT";
 
   const isExiting = hasEntered && visibleCount >= message.length;
+
+  const bootProgress = Math.min(
+    100,
+    Math.round((visibleCount / message.length) * 100)
+  );
 
   // Effect 1: Typing animation
   useEffect(() => {
@@ -260,24 +288,193 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const MOVEMENT_THRESHOLD =16;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
+
+      const currentPosition = {
+        x: event.clientX,
+        y: event.clientY,
+      };
+
+      const KEYBOARD_COOLDOWN = 350;
+      
+      // Ignore cursor movement briefly after typing.
+      if (performance.now() - lastKeyboardActivity.current < KEYBOARD_COOLDOWN) {
+        lastPointerPosition.current = currentPosition;
+        return;
+      }
+
+      const previousPosition = lastPointerPosition.current;
+
+      if (!previousPosition) {
+        lastPointerPosition.current = currentPosition;
+        return;
+      }
+
+      const distance = Math.hypot(
+        currentPosition.x - previousPosition.x,
+        currentPosition.y - previousPosition.y
+      );
+
+      if (distance >= MOVEMENT_THRESHOLD) {
+        setActiveInput("mouse");
+        lastPointerPosition.current = currentPosition;
+      }
+    };
+
     const handleMouseActivity = () => {
       setActiveInput("mouse");
     };
 
     const handleKeyboardActivity = () => {
+      lastKeyboardActivity.current = performance.now();
+
+      lastPointerPosition.current = null;
+
       setActiveInput("keyboard");
     };
 
-    window.addEventListener("pointermove", handleMouseActivity);
+    window.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointerdown", handleMouseActivity);
     window.addEventListener("wheel", handleMouseActivity);
     window.addEventListener("keydown", handleKeyboardActivity);
 
     return () => {
-      window.removeEventListener("pointermove", handleMouseActivity);
+      window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerdown", handleMouseActivity);
       window.removeEventListener("wheel", handleMouseActivity);
       window.removeEventListener("keydown", handleKeyboardActivity);
+    };
+  }, []);
+
+  useEffect(() => {
+    let resetTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const handleMouseMovement = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
+
+      // Convert physical movement into small visual offsets.
+      const x = Math.max(-8, Math.min(8,event.movementX * 0.6));
+      const y = Math.max(-8, Math.min(8,event.movementY * 0.6));
+
+      setMouseOffset({ x, y });
+
+      if (resetTimer !== null) {
+        clearTimeout(resetTimer);
+      }
+
+      //Gently return to the center when movement stops.
+      resetTimer = setTimeout(() => {
+        setMouseOffset({ x: 0, y: 0 });
+      }, 150);
+    };
+
+    window.addEventListener("pointermove", handleMouseMovement);
+
+    return () => {
+      window.removeEventListener("pointermove", handleMouseMovement);
+
+      if (resetTimer !== null) {
+        clearTimeout(resetTimer);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const IDLE_TIMEOUT = 750;
+
+    let idleTimer: ReturnType<typeof setTimeout>;
+
+    const resetIdleTimer = () => {
+      clearTimeout(idleTimer);
+
+      idleTimer = setTimeout(() => {
+        //Return the right hand to the keyboard.
+        setActiveInput("keyboard");
+      }, IDLE_TIMEOUT);
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
+
+      resetIdleTimer();
+    }
+
+    // Start counting when the page loads.
+    resetIdleTimer();
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerdown", resetIdleTimer);
+    window.addEventListener("pointerup", resetIdleTimer);
+    window.addEventListener("wheel", resetIdleTimer);
+    window.addEventListener("keydown", resetIdleTimer);
+
+    return () => {
+      clearTimeout(idleTimer);
+
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerdown", resetIdleTimer);
+      window.removeEventListener("pointerup", resetIdleTimer);
+      window.removeEventListener("wheel", resetIdleTimer);
+      window.removeEventListener("keydown", resetIdleTimer);
+    };
+  }, []);
+
+  const handleAutoKey = useCallback((
+    key: string,
+    source: "editor" | "terminal"
+  ) => {
+    const now = performance.now();
+
+    if (source === "terminal") {
+      lastTerminalStrokeRef.current = now;
+    }
+
+    // Terminal typing has priority.
+    if (
+      source === "editor" &&
+      now - lastTerminalStrokeRef.current < 300
+    ) {
+      return;
+    }
+
+    // Update the keyboard.
+    setAutoKeyEvent((previous) => ({
+      key,
+      id: (previous?.id ?? 0) + 1,
+    }));
+
+    // Update the system activity.
+    setAutoInputSource(
+      source === "terminal" ? "TERMINAL" : "EDITOR"
+    );
+
+    // Reset the inactivity timer.
+    if (autoInputTimeoutRef.current !== null) {
+      clearTimeout(autoInputTimeoutRef.current);
+    }
+
+    autoInputTimeoutRef.current = setTimeout(() => {
+      setAutoInputSource("STANDBY");
+      autoInputTimeoutRef.current = null;
+    }, 350);
+  }, []);
+
+  const handleEditorAutoKey = useCallback((key: string) => {
+    handleAutoKey(key, "editor");
+  }, [handleAutoKey]);
+
+  const handleTerminalAutoKey = useCallback((key: string) => {
+    handleAutoKey(key, "terminal");
+  }, [handleAutoKey]);
+
+  useEffect(() => {
+    return () => {
+      if (autoInputTimeoutRef.current !== null) {
+        clearTimeout(autoInputTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -301,6 +498,8 @@ export default function Home() {
             hasEntered={hasEntered}
             isExiting={isExiting}
           />
+          
+          <PointerTracker />
 
           {/* Central intro content */}
 
@@ -389,6 +588,7 @@ export default function Home() {
                   onPatchPhaseChange={handlePatchPhaseChange}
                   onNavigationComplete={finishNavigation}
                   isPaused={isSplit}
+                  onAutoKey={handleEditorAutoKey}
                 />
 
                 {/* Secondary editor overlays CodeCanvas */}
@@ -410,6 +610,7 @@ export default function Home() {
                         secondaryCommand === "editor.run preview.ts"
                       }
                       isVisible={secondaryVisible}
+                      onAutoKey={handleEditorAutoKey}
                     />
                   </div>
                 )}
@@ -426,17 +627,25 @@ export default function Home() {
                   secondaryEditComplete={secondaryEditComplete}
                   secondaryExecutionComplete={secondaryExecutionComplete}
                   isVisitorIdle={isVisitorIdle}
+                  onAutoKey={handleTerminalAutoKey}
                 />
               </div>
 
               <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_150px] items-start gap-3">
                
                 <div className="min-w-0">
-                  <IntroKeyboard isMouseActive={activeInput === "mouse"} />
+                  <IntroKeyboard
+                    isMouseActive={activeInput === "mouse"}
+                    mouseOffset={mouseOffset}
+                    autoKeyEvent={autoKeyEvent}
+                  />
                 </div>
 
                 <div className="min-w-0">
-                  <IntroMouse isMouseActive={activeInput === "mouse"}/>
+                  <IntroMouse
+                    isMouseActive={activeInput === "mouse"}
+                    mouseOffset={mouseOffset}
+                  />
                 </div>
               </div>
 
@@ -516,6 +725,25 @@ export default function Home() {
                   <span className="cursor-blink">_</span>
                 </p>
 
+                {/* System boot progress */}
+                {hasEntered && (
+                  <div
+                    className="mx-auto mt-3 h-[2px] w-full max-w-[340px] overflow-hidden bg-[#494538]"
+                    role="progressbar"
+                    aria-label="System boot animation"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={bootProgress}
+                  >
+                    <div
+                      className="h-full bg-[#F5C542] transition-[width] duration-75 ease-linear motion-reduce:transition-none"
+                      style={{
+                        width: `${bootProgress}%`,
+                      }}
+                    />
+                  </div>
+                )}
+
                 {/* System  Readout */}
                 <div className="mt-[clamp(16px,3dvh,36px)] w-full max-w-[340px] border-t border-[#494538] pt-[clamp(10px,1.5dvh,20px)]">
 
@@ -544,6 +772,20 @@ export default function Home() {
                     <span className={`text-right ${hasEntered ? "text-[#F5C542]" : "text-[#D94B43]"}`}>
                       {hasEntered ? "INITIALIZING" :  "DORMANT"}
                     </span>
+                    
+                    <span className="text-[#92958B]">
+                      › AUTO INPUT
+                    </span>
+
+                    <span className={`text-right ${
+                      autoInputSource === "STANDBY"
+                        ? "text-[#92958B]"
+                        : "text-[#F5C542]"
+                    }`}>
+                      {autoInputSource}
+                    </span>
+
+                    <PointerTelemetry />
 
                   </div>
                 </div>

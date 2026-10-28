@@ -10,6 +10,7 @@ type SecondaryEditorPaneProps = {
     onExecutionComplete: () => void;
     runRequested: boolean;
     isVisible: boolean;
+    onAutoKey: (key: string) => void;
 };
 
 const systemLines = editorSequence.filter(
@@ -72,7 +73,8 @@ export default function SecondaryEditorPane({
     onEditingComplete,
     onExecutionComplete,
     runRequested,
-    isVisible
+    isVisible,
+    onAutoKey
 }: SecondaryEditorPaneProps) {
     const [typedLine, setTypedLine] = useState("");
     const [visibleLines, setVisibleLines] = useState(0);
@@ -129,8 +131,20 @@ export default function SecondaryEditorPane({
 
             const frame = frames[frameIndex];
 
+
             typingTimeout = window.setTimeout(() => {
-                setTypedLine(frame.text);
+                const previousText =
+                    frameIndex > 0 ? frames[frameIndex - 1].text : "";
+
+                const currentText = frame.text;
+
+                if (currentText.length > previousText.length) {
+                    onAutoKey(currentText.slice(-1));
+                } else if (currentText.length < previousText.length) {
+                    onAutoKey("backspace");
+                }
+
+                setTypedLine(currentText);
                 frameIndex++;
                 typeNextFrame();
             }, frame.delay);
@@ -142,7 +156,7 @@ export default function SecondaryEditorPane({
             window.clearTimeout(startTimeout);
             window.clearTimeout(typingTimeout);
         };
-    }, [sourceLoaded]);
+    }, [sourceLoaded, onAutoKey]);
 
     useEffect(() => {
         if (!typingComplete) return;
@@ -195,58 +209,76 @@ export default function SecondaryEditorPane({
         ];
 
         const lineFrames = codeBlock.map((line) =>
-        createTypingFrames(line, 45, 0.025)
-    );
+            createTypingFrames(line, 45, 0.025)
+        );
 
-    let lineIndex = 0;
-    let frameIndex = 0;
-    let typingTimeout: number | undefined;
+        let lineIndex = 0;
+        let frameIndex = 0;
+        let typingTimeout: number | undefined;
 
-    const typeNextFrame = () => {
-        if (lineIndex >= lineFrames.length) {
-            setInsertionComplete(true);
-            return;
-        }
-
-        const frames = lineFrames[lineIndex];
-
-        if (frameIndex >= frames.length) {
-            lineIndex++;
-            frameIndex = 0;
-
-            if (lineIndex < lineFrames.length) {
-                setInsertedLines((previous) => [...previous, ""]);
-
-                typingTimeout = window.setTimeout(typeNextFrame, 150);
-            } else {
+        const typeNextFrame = () => {
+            if (lineIndex >= lineFrames.length) {
                 setInsertionComplete(true);
+                return;
             }
 
-            return;
-        }
+            const frames = lineFrames[lineIndex];
 
-        const frame = frames[frameIndex];
-        const currentLineIndex = lineIndex;
+            if (frameIndex >= frames.length) {
+                lineIndex++;
+                frameIndex = 0;
 
-        typingTimeout = window.setTimeout(() => {
-            setInsertedLines((previous) => {
-                const updated = [...previous];
-                updated[currentLineIndex] = frame.text;
-                return updated;
-            });
+                if (lineIndex < lineFrames.length) {
+                    // Simulate pressing Enter to create a new line.
+                    onAutoKey("enter");
 
-            frameIndex++;
-            typeNextFrame();
-        }, frame.delay);
-    };
+                    // Add a new empty line to the editor.
+                    setInsertedLines((previous) => [...previous, ""]);
 
-    const startTimeout = window.setTimeout(typeNextFrame, 1000);
+                    // Brief pause before typing the next line.
+                    typingTimeout = window.setTimeout(typeNextFrame, 150);
+                } else {
+                    setInsertionComplete(true);
+                }
 
-    return () => {
-        window.clearTimeout(startTimeout);
-        window.clearTimeout(typingTimeout);
-    };
-    }, [typedLine]);
+                return;
+            }
+
+            const frame = frames[frameIndex];
+            const currentLineIndex = lineIndex;
+
+            typingTimeout = window.setTimeout(() => {
+                const previousText =
+                    frameIndex > 0 ? frames[frameIndex - 1].text : "";
+
+                const currentText = frame.text;
+
+                // Send the typed character to the keyboard.
+                if (currentText.length > previousText.length) {
+                    onAutoKey(currentText.slice(-1));
+                } else if (currentText.length < previousText.length) {
+                    onAutoKey("backspace");
+                }
+
+                // Update the secondary editor.
+                setInsertedLines((previous) => {
+                    const updated = [...previous];
+                    updated[currentLineIndex] = currentText;
+                    return updated;
+                });
+
+                frameIndex++;
+                typeNextFrame();
+            }, frame.delay);
+        };
+
+        const startTimeout = window.setTimeout(typeNextFrame, 1000);
+
+        return () => {
+            window.clearTimeout(startTimeout);
+            window.clearTimeout(typingTimeout);
+        };
+    }, [typedLine, onAutoKey]);
  
     useEffect(() => {
         if (!insertionComplete) return;

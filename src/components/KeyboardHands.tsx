@@ -35,6 +35,10 @@ type KeyboardHandsProps = {
     right: number | null;
   };
   isMouseActive: boolean;
+  mouseOffset: {
+    x: number;
+    y: number;
+  };
 };
 
 type AnimationState = {
@@ -170,6 +174,7 @@ export default function KeyboardHands({
   fingerTargets,
   homePositions,
   isMouseActive,
+  mouseOffset,
 }: KeyboardHandsProps) {
   const [frame, setFrame] = useState<AnimationState>(emptyState);
   const frameRef = useRef<AnimationState>(emptyState());
@@ -184,10 +189,23 @@ export default function KeyboardHands({
   void isMouseActive;
 
   const getRestingX = useCallback(
-    (side: HandSide) =>
-      side === "left"
-        ? (homePositions.left ?? width * 0.3) - 18
-        : (homePositions.right ?? width * 0.7) + 18,
+    (side: HandSide) => {
+      const homePosition =
+        side === "left"
+          ? homePositions.left
+          : homePositions.right;
+
+      const fallback =
+        side === "left" ? width * 0.3 : width * 0.7;
+
+      const safePosition =
+        homePosition !== null &&
+        Number.isFinite(homePosition)
+          ? homePosition
+          : fallback;
+
+      return safePosition + (side === "left" ? -18 : 18);
+    },
     [homePositions.left, homePositions.right, width]
   );
 
@@ -226,12 +244,12 @@ export default function KeyboardHands({
       ): Point => ({
         x:
           (mouseRect.left +
-            (x / 180) * mouseRect.width -
+            ((x + mouseOffset.x) / 180) * mouseRect.width -
             keyboardRect.left) *
           scaleX,
         y:
           (mouseRect.top +
-            (y / 220) * mouseRect.height -
+            ((y + mouseOffset.y) / 220) * mouseRect.height -
             keyboardRect.top) *
           scaleY,
       });
@@ -264,7 +282,7 @@ export default function KeyboardHands({
       window.removeEventListener("resize", updateMousePosition);
       window.removeEventListener("scroll", updateMousePosition, true);
     };
-  }, [isMouseActive, width, height]);
+  }, [isMouseActive, width, height, mouseOffset.x, mouseOffset.y]);
 
   useEffect(() => {
     const handleMouseDown = (event: MouseEvent) => {

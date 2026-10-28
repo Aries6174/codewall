@@ -67,11 +67,13 @@ type IntroTerminalProps = {
     secondaryExecutionComplete: boolean;
     isVisitorIdle: boolean;
     ref?: React.Ref<IntroTerminalHandle>
+    onAutoKey: (key: string) => void;
 };
 
 export default function IntroTerminal({
     ref,
     onCommand,
+    onAutoKey,
     patchPhase,
     onEnterSystem,
     secondaryEditComplete,
@@ -244,6 +246,10 @@ export default function IntroTerminal({
     useEffect(() => {
         if (!currentCommand) return;
 
+        if (manualInput.trim().length > 0) {
+            return;
+        }
+
         if (
             currentCommand.input === "editor.close preview.ts" &&
             !secondaryExecutionComplete
@@ -281,6 +287,22 @@ export default function IntroTerminal({
                     setIdleSequenceActive(true);
                 }
 
+                // Compare the previous and current typing frames.
+                const previousText =
+                    typingFrames[visibleCount - 1]?.text ?? "";
+
+                const currentText = nextFrame.text;
+
+                // Character typed.
+                if (currentText.length > previousText.length) {
+                    onAutoKey(currentText.slice(-1));
+                }
+
+                // Character deleted.
+                else if (currentText.length < previousText.length) {
+                    onAutoKey("backspace");
+                }
+
                 setVisibleCount((count) => count + 1);
             }, typingDelay);
 
@@ -313,7 +335,9 @@ export default function IntroTerminal({
         patchPhase,
         secondaryEditComplete,
         secondaryExecutionComplete,
-        idleSequenceActive
+        idleSequenceActive,
+        onAutoKey,
+        manualInput
     ]);
 
     // Keep terminal scrolled to latest output

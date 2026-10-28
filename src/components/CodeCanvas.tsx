@@ -14,6 +14,7 @@ type CodeCanvasProps = {
     onPatchPhaseChange: (phase: PatchPhase) => void;
     onNavigationComplete: () => void;
     isPaused: boolean;
+    onAutoKey: (key: string) => void;
 };
 
 export default function CodeCanvas({
@@ -21,7 +22,8 @@ export default function CodeCanvas({
     patchPhase,
     onPatchPhaseChange,
     onNavigationComplete,
-    isPaused
+    isPaused,
+    onAutoKey
 }: CodeCanvasProps){
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const footerInfoRef = useRef<HTMLSpanElement>(null);
@@ -448,7 +450,7 @@ export default function CodeCanvas({
                 quoteText = "";
 
                 const fullQuote = createQuote();
-                const typingFrames = createTypingFrames(fullQuote, 45, 0.025);
+                const typingFrames = createTypingFrames(fullQuote, 90, 0.025);
 
                 let frameIndex = 0;
 
@@ -464,7 +466,17 @@ export default function CodeCanvas({
                                 return;
                             }
 
+                            const previousText = quoteText;
+
                             quoteText = frame.text;
+
+                            if (quoteText.length > previousText.length) {
+                                const character = quoteText.slice(-1);
+                                onAutoKey(character);
+                            }else if (quoteText.length < previousText.length) {
+                                onAutoKey("backspace");
+                            }
+
                             frameIndex++;
                             typeNextFrame();
                         }, isPausedRef.current ? 100 : frame.delay);
@@ -809,12 +821,6 @@ export default function CodeCanvas({
 
             ctx.restore();
 
-
-            ctx.beginPath();
-            ctx.arc(mouse.x, mouse.y, 4, 0, Math.PI * 2);
-            ctx.fillStyle = "#D94B43";
-            ctx.fill();  
-
             animationId = requestAnimationFrame(animate);
         };
     
@@ -834,7 +840,7 @@ export default function CodeCanvas({
             canvas.removeEventListener("mouseleave", handleMouseLeave);
             canvas.removeEventListener("wheel", handleWheel);
         };
-    }, [onPatchPhaseChange, onNavigationComplete, charWidth]);
+    }, [onPatchPhaseChange, onNavigationComplete, onAutoKey, charWidth]);
 
     
     return (
