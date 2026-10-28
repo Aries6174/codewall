@@ -580,7 +580,7 @@ export default function Home() {
             <div className="flex min-w-0 flex-col items-start gap-[clamp(8px,1.3dvh,16px)]">
 
               {/* CodeCanvas container */}
-              <div className="relative w-full min-w-0 overflow-hidden border">
+              <div className="relative w-full min-w-0 overflow-hidden">
 
                 <CodeCanvas
                   activeCommand={terminalCommand}

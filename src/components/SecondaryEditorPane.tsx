@@ -336,17 +336,17 @@ export default function SecondaryEditorPane({
         <div className="flex h-full w-full min-w-0 flex-col bg-[#0B0C0B]">
 
             {/* Header - matches CodeCanvas */}
-            <div className="flex items-center justify-between px-2 py-0.5">
+            <div className="flex items-center justify-between px-3 py-2 border-b-2 border-[#494538]/40">
                 <div className="flex items-center gap-2">
                     <span className="h-[5px] w-[5px] rounded-full bg-[#F5C542]" />
 
-                    <span className="font-mono text-[10px] text-[#E6DDC9]">
+                    <span className="font-mono text-[12px] text-[#E6DDC9]">
                         src / system.ts
                     </span>
                 </div>
 
                 <span
-                    className={`font-mono text-[10px] tracking-wide ${
+                    className={`font-mono text-[12px] tracking-wide ${
                         executionPhase === "running"
                             ? "animate-pulse text-[#F5C542]"
                             : "text-[#92958B]"

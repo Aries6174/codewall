@@ -695,6 +695,31 @@ export default function CodeCanvas({
 
             ctx.clearRect(0, 0, logicalWidth, logicalHeight);
 
+            // Subtle active-line highlight
+            const activeRow = hoveredRow ?? 7;
+
+            const activeLineY =
+                topPadding + activeRow * lineHeight - lineHeight + 3;
+
+            ctx.fillStyle = "rgba(245, 197, 66, 0.055)";
+
+            ctx.fillRect(
+                0,
+                activeLineY,
+                logicalWidth,
+                lineHeight
+            );
+
+            // Small gold indicator beside the line number
+            ctx.fillStyle = "rgba(245, 197, 66, 0.7)";
+
+            ctx.fillRect(
+                0,
+                activeLineY,
+                2,
+                lineHeight
+            );
+
             if (hoveredRow !== null){
                 const highlightY = topPadding + hoveredRow * lineHeight - lineHeight + 3;
                 
@@ -844,19 +869,18 @@ export default function CodeCanvas({
 
     
     return (
-        <div className="w-full bg-[#0B0C0B]">
+        <div className="w-full bg-[#080A09]/25">
 
-            
-            <div className="flex items-center justify-between px-2 py-0.5">
+            <div className="flex items-center justify-between px-3 py-2 border-b-2 border-[#494538]/40">
                 <div className="flex items-center gap-2">
                     <span className="h-[5px] w-[5px] rounded-full bg-[#F5C542]" />
 
-                    <span className="font-mono text-[10px] text-[#E6DDC9]">
+                    <span className="font-mono text-[12px] text-[#E6DDC9]">
                         src / <span ref={filenameRef}>developer.ts</span>
                     </span>
                 </div>
 
-                <span className="font-mono text-[10px] tracking-wide text-[#92958B]">    
+                <span className="font-mono text-[12px] tracking-wide text-[#92958B]">    
                     {patchPhase === "running"
                         ? "PATCH MODE — RUNNING"
                         : patchPhase === "complete"
