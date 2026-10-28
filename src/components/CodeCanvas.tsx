@@ -79,10 +79,22 @@ export default function CodeCanvas({
         const logicalHeight = 260;
 
         const resizeCanvas = () => {
+            const cssWidth = canvas.clientWidth;
+            const cssHeight = canvas.clientHeight;
+
+            // Don't resize the canvas while hidden.
+            if (cssWidth <= 0 || cssHeight <= 0) {
+                return;
+            }
+
             const pixelRatio = window.devicePixelRatio || 1;
 
-            const width = Math.round(canvas.clientWidth * pixelRatio);
-            const height = Math.round(canvas.clientHeight * pixelRatio);
+            const width = Math.round(cssWidth * pixelRatio);
+            const height = Math.round(cssHeight * pixelRatio);
+
+            if (width <= 0 || height <= 0) {
+                return;
+            }
 
             if (canvas.width !== width || canvas.height !== height) {
                 canvas.width = width;
@@ -90,7 +102,7 @@ export default function CodeCanvas({
             }
 
             const scale = height / logicalHeight;
-            
+
             logicalWidth = width / scale;
 
             ctx.setTransform(

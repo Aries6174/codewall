@@ -333,7 +333,7 @@ export default function SecondaryEditorPane({
 
 
     return (
-        <div className="flex h-full w-full min-w-0 flex-col bg-[#0B0C0B]">
+        <div className="flex h-full w-full min-w-0 flex-col bg-transparent">
 
             {/* Header - matches CodeCanvas */}
             <div className="flex items-center justify-between px-3 py-2 border-b-2 border-[#494538]/40">

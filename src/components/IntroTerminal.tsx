@@ -435,137 +435,273 @@ export default function IntroTerminal({
         return true;
     };
 
+    const terminalStatus =
+        patchPhase === "running"
+            ? "EXECUTING"
+            : !currentCommand
+                ? "READY"
+                : visibleCount < typingFrames.length
+                    ? "TYPING"
+                    : "EXECUTING";
+
+    const terminalBusy = terminalStatus !== "READY";
+
     return (
-        <div className="w-full font-mono">
+        <div className="terminal-shell w-full min-w-0 font-mono">
 
-            {/* Terminal header */}
-            <div className="flex items-center justify-between text-[10px] text-[#92958B]">
-                <span>TERMINAL / SESSION 001</span>
+            {/* SYSTEM HEADER */}
+            <div className="flex items-center justify-between gap-3 border-b border-[#494538]/40 px-3 py-2">
 
-                <span>
-                    {!currentCommand
-                        ? "READY"
-                        : visibleCount < typingFrames.length
-                            ? "TYPING"
-                            : "EXECUTING"}
-                </span>
-            </div>
+                <div className="flex min-w-0 items-center gap-2">
+                    <span className="text-[16px] text-[#F5C542]">
+                        ⌁
+                    </span>
 
-            {/* Terminal output */}
-            <div
-                ref={terminalOutputRef}
-                className="mt-1.5 h-[clamp(75px,12dvh,140px)] space-y-0.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[11px] leading-[15px]"
-            >
-                <p className="text-[#92958B]">
-                    <span className="mr-3 text-[#F5C542]">➜</span>
-                    system ready
-                </p>
-
-                {/* Completed commands */}
-                {history.map((entry, index) => (
-                    <div key={index} className="space-y-0">
-                        <p className="text-[#E6DDC9]">
-                            <span className="mr-3 text-[#F5C542]">➜</span>
-                            {entry.input}
+                    <div className="min-w-0">
+                        <p className="text-[11px] font-semibold tracking-[0.1em] text-[#E6DDC9]">
+                            SYS://TERMINAL
+                            <span className="text-[#F5C542]">_</span>
                         </p>
 
-                        <p className="pl-6 whitespace-pre-line text-[#92958B]">
-                            {entry.output}
+                        <p className="text-[8px] tracking-[0.08em] text-[#92958B]">
+                            SESSION_001 / COMMAND INTERFACE
                         </p>
                     </div>
-                ))}
+                </div>
 
-                {/* Automatic command prompt */}
+                <div className="flex shrink-0 items-center gap-2">
+                    <span
+                        className={`terminal-status-dot ${
+                            terminalBusy ? "terminal-status-busy" : ""
+                        }`}
+                    />
+
+                    <span className={`text-[9px] tracking-wider ${
+                        terminalBusy
+                            ? "text-[#F5C542]"
+                            : "text-[#59C9A5]"
+                    }`}>
+                        {terminalStatus}
+                    </span>
+                </div>
+            </div>
+
+            {/* ANIMATED SIGNAL BAR */}
+            <div
+                className={`terminal-signal-strip ${
+                    terminalBusy ? "terminal-signal-active" : ""
+                }`}
+                aria-hidden="true"
+            />
+
+            {/* TERMINAL HISTORY */}
+            <div
+                ref={terminalOutputRef}
+                data-active={terminalBusy}
+                className="terminal-output h-[clamp(75px,12dvh,140px)] min-w-0 space-y-1 overflow-y-auto px-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+                <div className="flex gap-2 text-[10px] leading-[15px]">
+                    <span className="text-[#F5C542]">›</span>
+                    <span className="text-[#92958B]">[SYS]</span>
+                    <span className="text-[#92958B]">
+                        Runtime initialized successfully
+                    </span>
+                </div>
+
+                {/* COMPLETED COMMAND HISTORY */}
+                {history.map((entry, index) => {
+                    const isError =
+                        /not found|already queued|error/i.test(entry.output);
+
+                    const isRunning =
+                        /applying|navigating|executing|opening/i.test(entry.output) &&
+                        !/completed|located/i.test(entry.output);
+
+                    const label = isError
+                        ? "ERR"
+                        : isRunning
+                            ? "RUN"
+                            : "OK";
+
+                    return (
+                        <div key={index} className="min-w-0 space-y-0.5">
+
+                            {/* Command */}
+                            <div className="flex min-w-0 items-start gap-2 text-[10px] leading-[15px]">
+                                <span className="shrink-0 text-[#F5C542]">
+                                    ›
+                                </span>
+
+                                <span className="shrink-0 text-[#92958B]">
+                                    [CMD]
+                                </span>
+
+                                <span className="min-w-0 break-words text-[#E6DDC9]">
+                                    {entry.input}
+                                </span>
+                            </div>
+
+                            {/* Command result */}
+                            <div className="flex min-w-0 items-start gap-2 pl-3 text-[10px] leading-[15px]">
+
+                                <span className={
+                                    isError
+                                        ? "text-[#D94B43]"
+                                        : isRunning
+                                            ? "text-[#F5C542]"
+                                            : "text-[#59C9A5]"
+                                }>
+                                    {isError ? "×" : isRunning ? "◇" : "✓"}
+                                </span>
+
+                                <span className={
+                                    isError
+                                        ? "text-[#D94B43]"
+                                        : isRunning
+                                            ? "text-[#F5C542]"
+                                            : "text-[#59C9A5]"
+                                }>
+                                    [{label}]
+                                </span>
+
+                                <span className="min-w-0 whitespace-pre-line break-words text-[#92958B]">
+                                    {entry.output}
+                                </span>
+                            </div>
+                        </div>
+                    );
+                })}
+
+                {/* AUTOMATIC COMMAND TYPING */}
                 {currentCommand && (
-                    <div className="flex items-center gap-2 text-[#E6DDC9]">
-                        <span className="text-[#F5C542]">➜</span>
+                    <div className="flex min-w-0 items-start gap-2 text-[10px] leading-[15px]">
+                        <span className="shrink-0 text-[#F5C542]">
+                            ›
+                        </span>
 
-                        <span>
+                        <span className="shrink-0 text-[#92958B]">
+                            [CMD]
+                        </span>
+
+                        <span className="min-w-0 break-words text-[#E6DDC9]">
                             {typingFrames[visibleCount - 1]?.text ?? ""}
+
                             <span className="cursor-blink text-[#F5C542]">
                                 _
                             </span>
                         </span>
                     </div>
                 )}
+            </div>
 
-                {/* Manual command prompt - always available */}
-                <div className="flex items-center gap-2 text-[#E6DDC9]">
-                    <span className="text-[#F5C542]">➜</span>
+            {/* SEPARATE COMMAND INPUT */}
+            <div className="terminal-prompt flex min-w-0 items-center gap-2 border-t border-[#494538]/40 px-3 py-2">
 
-                    <input
-                        type="text"
-                        value={manualInput}
-                        onChange={(event) =>
-                            setManualInput(event.target.value)
+                <span className="shrink-0 text-[10px] font-semibold text-[#F5C542]">
+                    ADRIAN@SYS:~$
+                </span>
+
+                <input
+                    type="text"
+                    value={manualInput}
+                    onChange={(event) =>
+                        setManualInput(event.target.value)
+                    }
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                            handleManualCommand();
                         }
-                        onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                                handleManualCommand();
+
+                        if (event.key === "ArrowUp") {
+                            event.preventDefault();
+
+                            if (commandHistory.length === 0) return;
+
+                            if (historyIndex === -1) {
+                                setDraftInput(manualInput);
                             }
 
-                            if (event.key === "ArrowUp") {
-                                event.preventDefault();
+                            const nextIndex = Math.min(
+                                historyIndex + 1,
+                                commandHistory.length - 1
+                            );
 
-                                if (commandHistory.length === 0) return;
+                            setHistoryIndex(nextIndex);
 
-                                if (historyIndex === -1) {
-                                    setDraftInput(manualInput);
-                                }
+                            setManualInput(
+                                commandHistory[
+                                    commandHistory.length - 1 - nextIndex
+                                ]
+                            );
+                        }
 
-                                const nextIndex = Math.min(
-                                    historyIndex + 1,
-                                    commandHistory.length - 1
-                                );
+                        if (event.key === "ArrowDown") {
+                            event.preventDefault();
 
-                                setHistoryIndex(nextIndex);
+                            if (historyIndex === -1) return;
 
-                                setManualInput(
-                                    commandHistory[
+                            const nextIndex = historyIndex - 1;
+
+                            setHistoryIndex(nextIndex);
+
+                            setManualInput(
+                                nextIndex === -1
+                                    ? draftInput
+                                    : commandHistory[
                                         commandHistory.length - 1 - nextIndex
                                     ]
-                                );
-                            }
+                            );
+                        }
 
-                            if (event.key === "ArrowDown") {
+                        if (event.key === "Tab") {
+                            if (handleAutocomplete()) {
                                 event.preventDefault();
-
-                                if (historyIndex === -1) return;
-
-                                const nextIndex = historyIndex - 1;
-
-                                setHistoryIndex(nextIndex);
-
-                                setManualInput(
-                                    nextIndex === -1
-                                        ? draftInput
-                                        : commandHistory[
-                                            commandHistory.length - 1 - nextIndex
-                                        ]
-                                );
                             }
+                        }
 
-                            if (event.key === "Tab") {
-                                if (handleAutocomplete()) {
-                                    event.preventDefault();
-                                }
-                            }
+                        if (event.key === "Escape") {
+                            setManualInput("");
+                            setHistoryIndex(-1);
+                            setDraftInput("");
+                        }
+                    }}
+                    placeholder="Enter command..."
+                    aria-label="Terminal command"
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="min-w-0 flex-1 bg-transparent text-[10px] text-[#E6DDC9] outline-none caret-[#F5C542] placeholder:text-[#92958B]/50"
+                />
+            </div>
 
-                            if (event.key === "Escape") {
-                                setManualInput("");
-                                setHistoryIndex(-1);
-                                setDraftInput("");
-                            }
-                        }}
-                        placeholder="Enter command..."
-                        aria-label="Terminal command"
-                        autoComplete="off"
-                        spellCheck={false}
-                        className="min-w-0 flex-1 bg-transparent text-[#E6DDC9] outline-none caret-[#F5C542] placeholder:text-[#494538]"
-                    />
+            {/* SYSTEM FOOTER */}
+            <div className="flex items-center justify-between gap-2 border-t border-[#494538]/30 px-3 py-1.5 text-[8px] tracking-wider text-[#92958B]">
+
+                <div className="flex items-center gap-3">
+                    <span>
+                        <span className="text-[#59C9A5]">●</span>
+                        {" "}LOCAL ACTIVE
+                    </span>
+
+                    <span>INPUT: ENABLED</span>
                 </div>
 
+                <div className="flex items-center gap-2">
+                    <div
+                        className={`terminal-meter ${
+                            terminalBusy ? "terminal-meter-active" : ""
+                        }`}
+                        aria-hidden="true"
+                    >
+                        <span />
+                        <span />
+                        <span />
+                    </div>
+
+                    <span>SYS.001</span>
+                </div>
             </div>
+
         </div>
     );
+
 }

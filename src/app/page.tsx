@@ -183,7 +183,7 @@ export default function Home() {
 
     const timeout = window.setTimeout(() => {
       setIsSplit(false);
-    }, 550)
+    }, 650)
 
       return () => window.clearTimeout(timeout);
   }, [secondaryCommand])
@@ -238,52 +238,81 @@ export default function Home() {
     const scene = sceneRef.current;
     if (!scene) return;
 
+    let frameId: number | null = null;
+
     const updateScale = () => {
-    const headerSpace = 72;
-    const footerSpace = 24;
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
 
-    const availableWidth = window.innerWidth - 32;
-    const availableHeight =
-      window.innerHeight - headerSpace - footerSpace;
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
 
+        // Reset scaling when the mobile layout is active.
+        if (window.innerWidth < 900) {
+          setSceneScale(1);
+          return;
+        }
 
-      const sceneWidth = scene.offsetWidth;
-      const sceneHeight = scene.offsetHeight;
+        const headerSpace = 72;
+        const footerSpace = 24;
 
-      if (!sceneWidth || !sceneHeight) return;
+        const availableWidth = Math.max(
+          1,
+          window.innerWidth - 32
+        );
 
-      const widthScale = availableWidth / sceneWidth;
-      const heightScale = availableHeight / sceneHeight;
+        const availableHeight = Math.max(
+          1,
+          window.innerHeight - headerSpace - footerSpace
+        );
 
+        const sceneWidth = scene.offsetWidth;
+        const sceneHeight = scene.offsetHeight;
 
-      const nextScale = Math.min(
-        1,
-        availableWidth / sceneWidth,
-        availableHeight / sceneHeight
-      );
+        // Never calculate scale from hidden elements.
+        if (sceneWidth <= 0 || sceneHeight <= 0) {
+          return;
+        }
 
-      console.table({
-        availableWidth,
-        availableHeight,
-        sceneWidth,
-        sceneHeight,
-        widthScale,
-        heightScale,
-        nextScale,
+        const nextScale = Math.max(
+          0.1,
+          Math.min(
+            1,
+            availableWidth / sceneWidth,
+            availableHeight / sceneHeight
+          )
+        );
+
+        setSceneScale((previous) =>
+          Math.abs(previous - nextScale) < 0.001
+            ? previous
+            : nextScale
+        );
       });
-
-      setSceneScale(Math.max(0.1, nextScale));
     };
 
     const observer = new ResizeObserver(updateScale);
+    const breakpoint = window.matchMedia(
+      "(min-width: 900px)"
+    );
 
     observer.observe(scene);
+
     window.addEventListener("resize", updateScale);
+    breakpoint.addEventListener("change", updateScale);
+
     updateScale();
 
     return () => {
       observer.disconnect();
+
       window.removeEventListener("resize", updateScale);
+      breakpoint.removeEventListener("change", updateScale);
+
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
     };
   }, []);
 
@@ -555,11 +584,12 @@ export default function Home() {
           <div
             ref={sceneRef}
             className={`absolute z-10 left-1/2 top-[calc(50%+24px)]
-              hidden w-[calc(100vw-48px)] max-w-[1520px]
+              hidden w-[calc(100vw-48px)] max-w-[1720px]
               grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]
               min-[900px]:grid
               min-[1101px]:grid-cols-[190px_minmax(0,2.7fr)_minmax(0,0.9fr)]
-              items-start gap-6 px-4
+              min-[1440px]:grid-cols-[190px_minmax(0,1fr)_360px]
+              items-start gap-4 px-4
               transition-[opacity,filter] duration-700 ease-in-out
               ${
                 isExiting
@@ -571,13 +601,13 @@ export default function Home() {
               transformOrigin: "center",
             }}
           >
-            <div className="hidden min-w-0 self-stretch min-[1101px]:block">
-              <IntroSidebar />
-            </div>
 
+          <div className="hidden min-w-0 self-stretch min-[1101px]:block min-[1440px]:-translate-x-[230px]">
+            <IntroSidebar />
+          </div>
 
             {/* Interactive code editor */}
-            <div className="flex min-w-0 flex-col items-start gap-[clamp(8px,1.3dvh,16px)]">
+            <div className="flex min-w-0 flex-col items-start gap-[clamp(8px,1.3dvh,16px)] min-[1440px]:-ml-[220px] min-[1440px]:w-[calc(100%+220px)]">
 
               {/* CodeCanvas container */}
               <div className="relative w-full min-w-0 overflow-hidden">
@@ -595,12 +625,14 @@ export default function Home() {
                 {isSplit && (
                   <div
                     className={`absolute inset-y-0 right-0 z-10 w-1/2 overflow-hidden
-                      border-l border-[#494538] bg-[#0B0C0B]
-                      transition-[transform,opacity] duration-500 ease-in-out
+                      border-l border-[#494538]/40
+                      bg-[#080A09]/25 backdrop-blur-[6px]
                       ${
-                        secondaryVisible
-                          ? "translate-x-0 opacity-100"
-                          : "translate-x-full opacity-0"
+                        secondaryCommand === "editor.close preview.ts"
+                          ? "secondary-glitch-exit"
+                          : secondaryVisible
+                            ? "secondary-glitch-enter"
+                            : "secondary-glitch-hidden"
                       }`}
                   >
                     <SecondaryEditorPane
@@ -618,7 +650,7 @@ export default function Home() {
               </div>
 
               {/* IntroTerminal stays BELOW CodeCanvas */}
-              <div className="w-full min-w-0 border">
+              <div className="w-full min-w-0">
                 <IntroTerminal
                   ref={terminalRef}
                   onCommand={handleTerminalCommand}
