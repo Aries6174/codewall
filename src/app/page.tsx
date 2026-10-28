@@ -31,8 +31,6 @@ export default function Home() {
   const [isVisitorIdle, setIsVisitorIdle] = useState(false);
   const lastInteractionRef = useRef(0);
   const terminalRef = useRef<IntroTerminalHandle>(null);
-  const sceneRef = useRef<HTMLDivElement>(null);
-  const [sceneScale, setSceneScale] = useState(1);
   const [activeInput, setActiveInput] = useState<"keyboard" | "mouse">("keyboard");
   const [mouseOffset, setMouseOffset] = useState({
     x: 0,
@@ -231,88 +229,6 @@ export default function Home() {
       window.removeEventListener("wheel", handleActivity);
   
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    const scene = sceneRef.current;
-    if (!scene) return;
-
-    let frameId: number | null = null;
-
-    const updateScale = () => {
-      if (frameId !== null) {
-        cancelAnimationFrame(frameId);
-      }
-
-      frameId = requestAnimationFrame(() => {
-        frameId = null;
-
-        // Reset scaling when the mobile layout is active.
-        if (window.innerWidth < 900) {
-          setSceneScale(1);
-          return;
-        }
-
-        const headerSpace = 72;
-        const footerSpace = 24;
-
-        const availableWidth = Math.max(
-          1,
-          window.innerWidth - 32
-        );
-
-        const availableHeight = Math.max(
-          1,
-          window.innerHeight - headerSpace - footerSpace
-        );
-
-        const sceneWidth = scene.offsetWidth;
-        const sceneHeight = scene.offsetHeight;
-
-        // Never calculate scale from hidden elements.
-        if (sceneWidth <= 0 || sceneHeight <= 0) {
-          return;
-        }
-
-        const nextScale = Math.max(
-          0.1,
-          Math.min(
-            1,
-            availableWidth / sceneWidth,
-            availableHeight / sceneHeight
-          )
-        );
-
-        setSceneScale((previous) =>
-          Math.abs(previous - nextScale) < 0.001
-            ? previous
-            : nextScale
-        );
-      });
-    };
-
-    const observer = new ResizeObserver(updateScale);
-    const breakpoint = window.matchMedia(
-      "(min-width: 900px)"
-    );
-
-    observer.observe(scene);
-
-    window.addEventListener("resize", updateScale);
-    breakpoint.addEventListener("change", updateScale);
-
-    updateScale();
-
-    return () => {
-      observer.disconnect();
-
-      window.removeEventListener("resize", updateScale);
-      breakpoint.removeEventListener("change", updateScale);
-
-      if (frameId !== null) {
-        cancelAnimationFrame(frameId);
-      }
     };
   }, []);
 
@@ -530,8 +446,6 @@ export default function Home() {
           
           <PointerTracker />
 
-          {/* Central intro content */}
-
           {/* Mobile introduction */}
           <section
             className={`absolute inset-x-6 top-1/2
@@ -580,37 +494,34 @@ export default function Home() {
               <span className="cursor-blink">_</span>
             </p>
           </section>
-
+          
+          {/* Main desktop layout */}
           <div
-            ref={sceneRef}
-            className={`absolute z-10 left-1/2 top-[calc(50%+24px)]
-              hidden w-[calc(100vw-48px)] max-w-[1720px]
-              grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]
-              min-[900px]:grid
-              min-[1101px]:grid-cols-[190px_minmax(0,2.7fr)_minmax(0,0.9fr)]
-              min-[1440px]:grid-cols-[190px_minmax(0,1fr)_360px]
-              items-start gap-4 px-4
+            className={`absolute inset-x-6 top-[78px] bottom-4 z-10
+              hidden min-[900px]:grid
+              grid-cols-[minmax(0,1fr)_260px]
+              min-[1101px]:grid-cols-[190px_minmax(0,1fr)_300px]
+              min-[1440px]:grid-cols-[190px_minmax(0,1fr)_340px]
+              items-stretch gap-6
               transition-[opacity,filter] duration-700 ease-in-out
               ${
                 isExiting
                   ? "opacity-0 blur-sm"
                   : "opacity-100 blur-0"
               }`}
-            style={{
-              transform: `translate(-50%, -50%) scale(${sceneScale})`,
-              transformOrigin: "center",
-            }}
           >
 
-          <div className="hidden min-w-0 self-stretch min-[1101px]:block">
-            <IntroSidebar />
-          </div>
+            {/* Sidebar - First Column */}
+            <div className="hidden min-w-0 self-stretch min-[1101px]:block">
+              <IntroSidebar />
+            </div>
 
-            {/* Interactive code editor */}
-            <div className="flex w-full min-w-0 flex-col items-start gap-[clamp(8px,1.3dvh,16px)]">
+            {/* Editor - Second Column */}
+            <div className="flex h-full min-h-0 w-full min-w-0 flex-col gap-2">
 
               {/* CodeCanvas container */}
-              <div className="relative w-full min-w-0 overflow-hidden">
+              <div className="relative min-h-0 w-full flex-[1.5] overflow-hidden">
+
 
                 <CodeCanvas
                   activeCommand={terminalCommand}
@@ -650,7 +561,7 @@ export default function Home() {
               </div>
 
               {/* IntroTerminal stays BELOW CodeCanvas */}
-              <div className="w-full min-w-0">
+              <div className="min-h-0 w-full flex-1">
                 <IntroTerminal
                   ref={terminalRef}
                   onCommand={handleTerminalCommand}
@@ -663,8 +574,7 @@ export default function Home() {
                 />
               </div>
 
-              <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_150px] items-start gap-3">
-               
+              <div className="grid h-[210px] w-full min-w-0 shrink-0 grid-cols-[minmax(0,1fr)_150px] items-start gap-3">               
                 <div className="min-w-0">
                   <IntroKeyboard
                     isMouseActive={activeInput === "mouse"}

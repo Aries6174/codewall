@@ -396,7 +396,7 @@ export default function IntroKeyboard({
       {/* Keyboard */}
       <div
         ref={keyboardRef}
-        className="relative mx-auto mt-3 flex max-w-[620px] flex-col gap-[3px] pb-[clamp(95px,13dvh,140px)]"
+        className="relative mx-auto mt-3 flex w-full min-w-0 flex-col gap-[3px] pb-[clamp(70px,10dvh,90px)]"
       >
         {keyboardRows.map((row, rowIndex) => (
           <div key={rowIndex} className="flex gap-[3px]">
