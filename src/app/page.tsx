@@ -597,17 +597,17 @@ export default function Home() {
                   : "opacity-100 blur-0"
               }`}
             style={{
-              transform: `translate(calc(-50% - 4vw), -50%) scale(${sceneScale})`,
+              transform: `translate(-50%, -50%) scale(${sceneScale})`,
               transformOrigin: "center",
             }}
           >
 
-          <div className="hidden min-w-0 self-stretch min-[1101px]:block min-[1440px]:-translate-x-[230px]">
+          <div className="hidden min-w-0 self-stretch min-[1101px]:block">
             <IntroSidebar />
           </div>
 
             {/* Interactive code editor */}
-            <div className="flex min-w-0 flex-col items-start gap-[clamp(8px,1.3dvh,16px)] min-[1440px]:-ml-[220px] min-[1440px]:w-[calc(100%+220px)]">
+            <div className="flex w-full min-w-0 flex-col items-start gap-[clamp(8px,1.3dvh,16px)]">
 
               {/* CodeCanvas container */}
               <div className="relative w-full min-w-0 overflow-hidden">
