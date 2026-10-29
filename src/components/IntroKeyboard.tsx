@@ -153,9 +153,7 @@ export default function IntroKeyboard({
   const pressedKeysRef = useRef<Set<string>>(new Set());
   const autoPressedRef = useRef<string[]>([]);
   const autoHighlightedRef = useRef<string[]>([]);
-  const autoQueueRef = useRef<string[]>([]);
-  const autoPlayingRef = useRef(false);
-  const autoTimersRef = useRef<number[]>([]);
+  const autoReleaseTimerRef = useRef<number | null>(null);
   const lastAutoEventIdRef = useRef<number | null>(null);
 
   const [pressedKeys, setPressedKeys] = useState<string[]>([]);
@@ -267,25 +265,24 @@ export default function IntroKeyboard({
     setFingerTargets(targets);
   }, [getKeyPosition, isMouseActive]);
 
-  const playNextAutoKey = useCallback(function playNextAutoKey() {
-    if (autoPlayingRef.current) return;
+  // Synchronize key presses with CodeCanvas and Terminal.
+  useEffect(() => {
+    if (!autoKeyEvent) return;
 
-    const character = autoQueueRef.current.shift();
-    if (character === undefined) return;
-
-    const shiftedKey = shiftedKeys[character];
-    const key = shiftedKey ?? character.toLowerCase();
-
-    if (!getKeyPosition(key)) {
-      playNextAutoKey();
+    if (lastAutoEventIdRef.current === autoKeyEvent.id) {
       return;
     }
 
-    const isUppercase =
-      character.length === 1 &&
-      character >= "A" &&
-      character <= "Z";
+    lastAutoEventIdRef.current = autoKeyEvent.id;
 
+    const character = autoKeyEvent.key;
+    const shiftedKey = shiftedKeys[character];
+    const key = shiftedKey ?? character.toLowerCase();
+
+    // Ignore characters not present on the keyboard.
+    if (!getKeyPosition(key)) return;
+
+    const isUppercase = /^[A-Z]$/.test(character);
     const needsShift = isUppercase || shiftedKey !== undefined;
     const finger = findFinger(key);
 
@@ -298,86 +295,34 @@ export default function IntroKeyboard({
         ]
       : [key];
 
-    autoPlayingRef.current = true;
-
-    // Keep previous fingers active while adding the new key.
-    autoPressedRef.current = [
-      ...keys,
-      ...autoPressedRef.current,
-    ];
+    // Move the fingers and highlight the keys immediately.
+    autoPressedRef.current = keys;
+    autoHighlightedRef.current = keys;
 
     syncPressedKeys();
 
-    // Track timers so they can be cleaned up.
-    const schedule = (callback: () => void, delay: number) => {
-      const timer = window.setTimeout(() => {
-        autoTimersRef.current = autoTimersRef.current.filter(
-          (id) => id !== timer
-        );
-        callback();
-      }, delay);
-
-      autoTimersRef.current.push(timer);
-    };
-
-    // Highlight the key after the finger approaches.
-    schedule(() => {
-      autoHighlightedRef.current = [
-        ...keys,
-        ...autoHighlightedRef.current,
-      ];
-
-      syncPressedKeys();
-    }, 60);
-
-    // Start typing the next key.
-    schedule(() => {
-      autoPlayingRef.current = false;
-      playNextAutoKey();
-    }, 160);
-
-    // Release the previous finger and highlight after lingering.
-    schedule(() => {
-      for (const pressedKey of keys) {
-        const pressedIndex =
-          autoPressedRef.current.lastIndexOf(pressedKey);
-
-        if (pressedIndex !== -1) {
-          autoPressedRef.current.splice(pressedIndex, 1);
-        }
-
-        const highlightedIndex =
-          autoHighlightedRef.current.lastIndexOf(pressedKey);
-
-        if (highlightedIndex !== -1) {
-          autoHighlightedRef.current.splice(highlightedIndex, 1);
-        }
-      }
-
-      syncPressedKeys();
-    }, 280);
-  }, [getKeyPosition, syncPressedKeys]);
-
-
-useEffect(() => {
-    if (!autoKeyEvent) return;
-    if (lastAutoEventIdRef.current === autoKeyEvent.id) return;
-
-    lastAutoEventIdRef.current = autoKeyEvent.id;
-
-    // Avoid a large visual backlog during fast typing.
-    if (autoQueueRef.current.length >= 8) {
-      autoQueueRef.current.shift();
+    // Cancel the previous key's release timer.
+    if (autoReleaseTimerRef.current !== null) {
+      window.clearTimeout(autoReleaseTimerRef.current);
     }
 
-    autoQueueRef.current.push(autoKeyEvent.key);
-    playNextAutoKey();
-  }, [autoKeyEvent, playNextAutoKey]);
+    // Release the keys shortly after the typing event.
+    autoReleaseTimerRef.current = window.setTimeout(() => {
+      autoPressedRef.current = [];
+      autoHighlightedRef.current = [];
 
+      syncPressedKeys();
+      autoReleaseTimerRef.current = null;
+    }, 95);
+
+  }, [autoKeyEvent, getKeyPosition, syncPressedKeys]);
+
+  // Cleanup when the keyboard unmounts.
   useEffect(() => {
     return () => {
-      autoTimersRef.current.forEach(window.clearTimeout);
-      autoQueueRef.current = [];
+      if (autoReleaseTimerRef.current !== null) {
+        window.clearTimeout(autoReleaseTimerRef.current);
+      }
     };
   }, []);
 
@@ -504,14 +449,25 @@ useEffect(() => {
         ))}
 
         {/* Wireframe hands */}
-        <KeyboardHands
+       <KeyboardHands
           width={keyboardSize.width}
           height={keyboardSize.height}
           fingerTargets={fingerTargets}
           homePositions={homePositions}
           isMouseActive={isMouseActive}
           mouseOffset={mouseOffset}
-        />
+          keyLabels={{
+            left:
+              pressedKeys.filter((key) =>
+                findFinger(key)?.startsWith("left-")
+              ).at(-1) ?? "—",
+            right: isMouseActive
+              ? "MOUSE"
+              : pressedKeys.filter((key) =>
+                  findFinger(key)?.startsWith("right-")
+                ).at(-1) ?? "—",
+          }}
+/>
       </div>
     </div>
   );

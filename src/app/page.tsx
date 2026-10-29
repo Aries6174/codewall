@@ -11,13 +11,13 @@ import IntroKeyboard from "@/components/IntroKeyboard";
 import IntroMouse from "@/components/IntroMouse";
 import PointerTracker from "@/components/PointerTracker"
 import PointerTelemetry from "@/components/PointerTelemetry";
+import IntroFooter from "@/components/IntroFooter";
 
 type PatchPhase = "idle" | "running" | "complete";
 
 export default function Home() {
   // States
   const [terminalCommand, setTerminalCommand] = useState("");
-  const [terminalStatus, setTerminalStatus] = useState("READY");
   const [secondaryCommand, setSecondaryCommand] = useState("");
   const [patchPhase, setPatchPhase] = useState<PatchPhase>("idle");
   const [isSplit, setIsSplit] = useState(false);
@@ -562,20 +562,20 @@ export default function Home() {
           </section>
 
           <div
-            className={`absolute inset-x-[15%] top-[78px] bottom-4 z-10
+            className={`absolute inset-x-[15%] top-[78px] bottom-[44px] z-10
               [@media(max-height:760px)]:top-[64px]
-              [@media(max-height:760px)]:bottom-2
               hidden min-[900px]:grid
               grid-cols-[minmax(0,1fr)_260px]
               min-[1101px]:grid-cols-[minmax(0,1fr)_300px]
               min-[1440px]:grid-cols-[minmax(0,1fr)_340px]
-              grid-rows-[minmax(0,1fr)]
+              grid-rows-[max-content]
+              content-start
               items-stretch gap-4
               transition-[opacity,filter] duration-700 ease-in-out
               ${isExiting ? "opacity-0 blur-sm" : "opacity-100 blur-0"}`}
           >
             {/* Interactive code editor */}
-            <div className="flex h-full min-h-0 w-full min-w-0 flex-col gap-2 [@media(max-height:760px)]:gap-1">
+            <div className="flex h-auto min-h-0 w-full min-w-0 flex-col gap-2 [@media(max-height:760px)]:gap-1">
 
               {/* CodeCanvas container */}
               <div className="relative w-full min-w-0 overflow-hidden">
@@ -592,7 +592,7 @@ export default function Home() {
                 {/* Secondary editor overlays CodeCanvas */}
                 {isSplit && (
                   <div
-                    className={`flex h-full w-full min-w-0 flex-col z-10 w-1/2 overflow-hidden
+                    className={`absolute inset-y-0 right-0 z-10 w-1/2 min-w-0 overflow-hidden
                       border-l border-[#494538]/40
                       bg-[#080A09]/25 backdrop-blur-[6px]
                       ${
@@ -628,7 +628,6 @@ export default function Home() {
                   secondaryExecutionComplete={secondaryExecutionComplete}
                   isVisitorIdle={isVisitorIdle}
                   onAutoKey={handleTerminalAutoKey}
-                  onStatusChange={setTerminalStatus}
                 />
               </div>
 
@@ -664,14 +663,20 @@ export default function Home() {
 
             {/* Developer Introduction */}
             <div className="relative isolate flex h-full min-h-0 w-full min-w-0 flex-col [@media(max-height:800px)]:gap-1">
-
-              <div className="relative z-10 flex h-full min-h-0 w-full flex-col gap-3 [text-shadow:0_2px_6px_rgba(0,0,0,0.95)] [@media(max-height:760px)]:gap-1">
+            <div
+              className="
+                relative z-10 flex h-full min-h-0 w-full
+                flex-col justify-between gap-2
+                [text-shadow:0_2px_6px_rgba(0,0,0,0.95)]
+                [@media(max-height:760px)]:gap-1
+              "
+            >
 
               {/* Developer Identity Header */}
               <div className="w-full min-w-0">
 
                 {/* Identification */}
-                <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#494538]/60 pb-2 font-mono text-[9px] tracking-[0.12em]">
+                <div className="mb-2 flex items-center justify-between gap-2 border-b border-[#494538]/60 pb-2 font-mono text-[9px] tracking-[0.12em]">
                   <span className="text-[#F5C542]">
                     SYS://IDENTITY
                   </span>
@@ -700,7 +705,7 @@ export default function Home() {
                 </h1>
 
                 {/* Developer Details */}
-                <div className="mt-2 flex flex-col gap-1 font-mono text-[12px] tracking-[0.1em] text-[#92958B] [@media(min-height:950px)]:mt-4 [@media(min-height:950px)]:gap-2">
+                <div className="mt-1 flex flex-col gap-1 font-mono text-[12px] tracking-[0.1em] text-[#92958B] [@media(min-height:950px)]:mt-4 [@media(min-height:950px)]:gap-2">
                   <p>SOFTWARE DEVELOPER</p>
                   <p>BASED IN THE PHILIPPINES</p>
                 </div>
@@ -708,7 +713,7 @@ export default function Home() {
               </div>
                 
                 {/* Introduction */}
-                <div className="mt-4 w-full min-w-0 [@media(min-height:950px)]:mt-12 [@media(max-height:800px)]:mt-0">
+                <div className="mt-2 w-full min-w-0 [@media(min-height:950px)]:mt-12 [@media(max-height:800px)]:mt-0">
                   <div className="mb-[clamp(8px,1.5dvh,24px)] h-px w-10 bg-[#494538]" />
                     <p className="font-mono text-[12px] leading-5 text-[#E6DDC6]">
                       I build digital experiences,
@@ -717,7 +722,7 @@ export default function Home() {
                     </p>
 
                     {/* Specialties */}
-                    <div className="mt-3 flex flex-col gap-1 font-mono text-[13px] tracking-[0.1em] text-[#92958B] [@media(min-height:950px)]:mt-8 [@media(min-height:950px)]:gap-4 [@media(max-height:760px)]:mt-1
+                    <div className="mt-2 flex flex-col gap-1 font-mono text-[13px] tracking-[0.1em] text-[#92958B] [@media(min-height:950px)]:mt-8 [@media(min-height:950px)]:gap-4 [@media(max-height:760px)]:mt-1
                       [@media(max-height:760px)]:gap-0
                       [@media(max-height:760px)]:text-[11px]
                       [@media(max-height:760px)]:leading-4"
@@ -730,7 +735,7 @@ export default function Home() {
 
                 {/* Enter System */}
                 {!hasEntered && (
-                  <div className="mt-4 flex flex-col gap-2 [@media(min-height:950px)]:mt-12 [@media(min-height:950px)]:gap-4 [@media(max-height:800px)]:mt-0 [@media(max-height:760px)]:mt-1
+                  <div className="mt-2 flex flex-col gap-2 [@media(min-height:950px)]:mt-12 [@media(min-height:950px)]:gap-4 [@media(max-height:800px)]:mt-0 [@media(max-height:760px)]:mt-1
                     [@media(max-height:760px)]:gap-1"
                   >
                     <div className="flex items-center gap-5">
@@ -756,7 +761,7 @@ export default function Home() {
                 )}
 
                 {/* System Status */}
-                <p className="mt-5 font-mono text-[10px] tracking-[0.15em] text-[#F5C542] [@media(max-height:850px)]:mt-2">
+                <p className="mt-2 font-mono text-[10px] tracking-[0.15em] text-[#F5C542] [@media(max-height:850px)]:mt-2">
                   ● {message.slice(0, visibleCount)}
                   <span className="cursor-blink">_</span>
                 </p>
@@ -783,7 +788,7 @@ export default function Home() {
                 {/* System  Readout */}
                 <div
                   id="system-readout"
-                  className="mt-[clamp(16px,3dvh,36px)] w-full border-t border-[#494538] pt-3 [@media(max-height:760px)]:mt-1 [@media(max-height:760px)]:pt-2"
+                  className="mt-3 w-full border-t border-[#494538] pt-2"
                 >
 
                   <p className="mb-2 font-mono text-[10px] tracking-[0.15em] text-[#92958B]">
@@ -801,11 +806,6 @@ export default function Home() {
                     <span className="text-[#92958B]">› EDITOR MODE</span>
                     <span className="text-[#F5C542] text-right">
                       {isSplit ? "SPLIT" : "SINGLE"}
-                    </span>
-
-                    <span className="text-[#92958B]">› TERMINAL</span>
-                    <span className="text-[#F5C542] text-right">
-                      {terminalStatus}
                     </span>
 
                     <span className="text-[#92958B]">› SYSTEM</span>
@@ -832,6 +832,7 @@ export default function Home() {
               </div>
             </div>  
           </div>
+          <IntroFooter isExiting={isExiting} />
         </>
       )}
 

@@ -68,7 +68,6 @@ type IntroTerminalProps = {
     isVisitorIdle: boolean;
     ref?: React.Ref<IntroTerminalHandle>
     onAutoKey: (key: string) => void;
-    onStatusChange: (status: string) => void;
 };
 
 export default function IntroTerminal({
@@ -80,7 +79,6 @@ export default function IntroTerminal({
     secondaryEditComplete,
     secondaryExecutionComplete,
     isVisitorIdle,
-    onStatusChange,
 }: IntroTerminalProps) {
     const patchPendingRef = useRef(false);
 
@@ -491,10 +489,6 @@ export default function IntroTerminal({
         : resultIsRunning
             ? "text-[#F5C542]"
             : "text-[#59C9A5]";
-
-    useEffect(() => {
-        onStatusChange(terminalStatus);
-    }, [terminalStatus, onStatusChange]);
 
     return (
         <div className="terminal-shell w-full min-w-0 font-mono">

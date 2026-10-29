@@ -112,7 +112,11 @@ export default function CodeCanvas({
                 window.innerHeight
             );
 
-            setSelectedCanvasHeight(selected.canvasHeight);
+            setSelectedCanvasHeight(
+            window.innerHeight < 820
+                ? "max(180px, calc(38dvh - 55px))"
+                : selected.canvasHeight
+            );
 
             const canvasHeight = canvas.clientHeight;
             if (canvasHeight <= 0) return;

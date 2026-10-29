@@ -34,15 +34,20 @@ export default function IntroTopBar({
       </div>
 
       <div className="flex items-center gap-3">
-        <span
-          className={`h-2 w-2 rounded-full ${
-            hasEntered ? "bg-[#F5C542]" : "bg-[#D94B43]"
-          }`}
-        />
-
-        <span className="text-[10px] tracking-[0.2em] text-[#92958B]">
-          {hasEntered ? "INITIALIZING" : "STANDBY"}
-        </span>
+        {hasEntered ? (
+          <span className="font-mono text-[10px] tracking-[0.2em] text-[#F5C542]">
+            INITIALIZING
+          </span>
+        ) : (
+          <a
+            href="https://github.com/Aries6174"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-[10px] tracking-[0.2em] text-[#92958B] transition-colors duration-200 hover:text-[#F5C542]"
+          >
+            [ GITHUB ↗ ]
+          </a>
+        )}
       </div>
     </header>
   );

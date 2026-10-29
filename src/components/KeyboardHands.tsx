@@ -39,12 +39,16 @@ type KeyboardHandsProps = {
     x: number;
     y: number;
   };
+  keyLabels: Record<HandSide, string>;
 };
+
 
 type AnimationState = {
   shifts: Record<HandSide, Point>;
   tips: Record<string, Point>;
+  pagePositions: Record<HandSide, Point>;
 };
+
 
 const fingerNames: FingerName[] = [
   "pinky",
@@ -194,6 +198,10 @@ const emptyState = (): AnimationState => ({
     right: { x: 0, y: 0 },
   },
   tips: {},
+  pagePositions: {
+    left: { x: 0, y: 0 },
+    right: { x: 0, y: 0 },
+  },
 });
 
 export default function KeyboardHands({
@@ -203,6 +211,7 @@ export default function KeyboardHands({
   homePositions,
   isMouseActive,
   mouseOffset,
+  keyLabels,
 }: KeyboardHandsProps) {
   const [frame, setFrame] = useState<AnimationState>(emptyState);
   const frameRef = useRef<AnimationState>(emptyState());
@@ -392,6 +401,7 @@ export default function KeyboardHands({
   useEffect(() => {
     let animationFrame = 0;
     let lastTime = 0;
+    let lastRenderTime = 0;
 
     const animate = (time: number) => {
       const deltaTime = lastTime
@@ -412,6 +422,7 @@ export default function KeyboardHands({
           right: { ...previous.shifts.right },
         },
         tips: { ...previous.tips },
+        pagePositions: { ...previous.pagePositions },
       };
 
       let moving = false;
@@ -563,8 +574,37 @@ export default function KeyboardHands({
         }
       }
 
+      const svg = svgRef.current;
+
+      if (svg && width > 0 && height > 0) {
+        const rect = svg.getBoundingClientRect();
+
+        for (const side of ["left", "right"] as const) {
+          const shift = next.shifts[side];
+
+          const wristX = getRestingX(side) + shift.x;
+          const wristY = height - 16 + shift.y;
+
+          next.pagePositions[side] = {
+            x: Math.round(
+              rect.left +
+              (wristX / width) * rect.width +
+              window.scrollX
+            ),
+            y: Math.round(
+              rect.top +
+              (wristY / height) * rect.height +
+              window.scrollY
+            ),
+          };
+        }
+      }
+
       frameRef.current = next;
-      setFrame(next);
+      if(time - lastRenderTime >= 33 || !moving) {
+        lastRenderTime = time;
+        setFrame(next);
+      }
 
       // Stop drawing when every finger settles.
       if (moving) {
@@ -761,6 +801,35 @@ export default function KeyboardHands({
           fill="#080909"
           stroke="#F5C542"
         />
+        
+        {/* Live wrist information */}
+        <g
+          pointerEvents="none"
+          textAnchor={side === "left" ? "end" : "start"}
+          fontFamily="monospace"
+          fontSize="8"
+          stroke="none"
+        >
+          <text
+            x={wristPoint.x + (side === "left" ? -12 : 12)}
+            y={wristPoint.y - 8}
+            fill="#F5C542"
+          >
+            {side === "left" ? "L" : "R"} / KEY:{" "}
+            {keyLabels[side] === " "
+              ? "SPACE"
+              : keyLabels[side].toUpperCase()}
+          </text>
+
+          <text
+            x={wristPoint.x + (side === "left" ? -12 : 12)}
+            y={wristPoint.y + 3}
+            fill="#92958B"
+          >
+          X:{frame.pagePositions[side].x}{" "}
+          Y:{frame.pagePositions[side].y}
+          </text>
+        </g>
 
         {/* Independently animated fingers */}
         {fingerData.map((finger) => (
