@@ -1,10 +1,63 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { editorSequence } from "@/data/editorFiles"
 import { glitchCharacters } from "@/data/glitchCharacters"
 import { getRandomDeveloperQuote } from "@/data/developerQuotes";
 import { createTypingFrames } from "@/utils/realisticTyping";
+
+const codeCanvasSizes = {
+    compact: {
+        fontSize: 11,
+        lineHeight: 16,
+        canvasHeight: "30dvh",
+    },
+
+    screen1024: {
+        fontSize: 9,
+        lineHeight: 13,
+        canvasHeight: "30dvh",
+    },
+
+    screen1366: {
+        fontSize: 11,
+        lineHeight: 16,
+        canvasHeight: "32dvh",
+    },
+
+    screen1600: {
+        fontSize: 12,
+        lineHeight: 18,
+        canvasHeight: "35dvh",
+    },
+
+    screen1920: {
+        fontSize: 14,
+        lineHeight: 21,
+        canvasHeight: "35dvh",
+    },
+};
+
+function getCodeCanvasSize(width: number, height: number) {
+    if (width >= 1800 && height >= 950) {
+        return codeCanvasSizes.screen1920;
+    }
+
+    if (width >= 1500 && height >= 850) {
+        return codeCanvasSizes.screen1600;
+    }
+
+    // Large browser window with limited vertical space
+    if (width >= 1400 && height < 850) {
+        return codeCanvasSizes.compact;
+    }
+
+    if (width >= 1200) {
+        return codeCanvasSizes.screen1366;
+    }
+
+    return codeCanvasSizes.screen1024;
+}
 
 type PatchPhase = "idle" | "running" | "complete";
 
@@ -16,6 +69,8 @@ type CodeCanvasProps = {
     isPaused: boolean;
     onAutoKey: (key: string) => void;
 };
+
+
 
 export default function CodeCanvas({
     activeCommand,
@@ -32,13 +87,68 @@ export default function CodeCanvas({
     const patchRequestRef = useRef(false);
     const navigationTargetRef = useRef<number | null>(null);
     const isPausedRef = useRef(isPaused);
+    const [fontMetrics, setFontMetrics] = useState({
+        fontSize: 9,
+        lineHeight: 13,
+    });
+    const [selectedCanvasHeight, setSelectedCanvasHeight] = useState(
+        "clamp(180px, 30dvh, 285px)"
+    );
 
-    const lineHeight = 12;
-    const fontSize = 8;
+    const { fontSize, lineHeight } = fontMetrics;
+
     const topPadding = 10;
     const gutterRight = 30;
     const codeStartX = 43;
     const charWidth = fontSize * 0.6;
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const updateFontSize = () => {
+            const selected = getCodeCanvasSize(
+                window.innerWidth,
+                window.innerHeight
+            );
+
+            setSelectedCanvasHeight(selected.canvasHeight);
+
+            const canvasHeight = canvas.clientHeight;
+            if (canvasHeight <= 0) return;
+
+            // Correct for the canvas's existing 260px drawing scale.
+            const correction = 260 / canvasHeight;
+
+            const nextFontSize = selected.fontSize * correction;
+            const nextLineHeight = selected.lineHeight * correction;
+
+            setFontMetrics((previous) => {
+                if (
+                    Math.abs(previous.fontSize - nextFontSize) < 0.01 &&
+                    Math.abs(previous.lineHeight - nextLineHeight) < 0.01
+                ) {
+                    return previous;
+                }
+
+                return {
+                    fontSize: nextFontSize,
+                    lineHeight: nextLineHeight,
+                };
+            });
+        };
+
+        const observer = new ResizeObserver(updateFontSize);
+        observer.observe(canvas);
+
+        window.addEventListener("resize", updateFontSize);
+        updateFontSize();
+
+        return () => {
+            observer.disconnect();
+            window.removeEventListener("resize", updateFontSize);
+        };
+    }, []);
 
     useEffect(() => {
         isPausedRef.current = isPaused;
@@ -877,7 +987,7 @@ export default function CodeCanvas({
             canvas.removeEventListener("mouseleave", handleMouseLeave);
             canvas.removeEventListener("wheel", handleWheel);
         };
-    }, [onPatchPhaseChange, onNavigationComplete, onAutoKey, charWidth]);
+    }, [onPatchPhaseChange, onNavigationComplete, onAutoKey, charWidth, fontSize, lineHeight]);
 
     
     return (
@@ -908,7 +1018,10 @@ export default function CodeCanvas({
                 ref={canvasRef}
                 width={620}
                 height={260}
-                className="block w-full h-[clamp(180px, 30dvh, 285px)] font-mono"
+                className="block w-full font-mono"
+                style={{
+                    height: selectedCanvasHeight,
+                }}
             />
 
             <div className="flex items-center justify-between px-3 py-3">

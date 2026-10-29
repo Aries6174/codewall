@@ -469,7 +469,7 @@ useEffect(() => {
       {/* Keyboard */}
       <div
         ref={keyboardRef}
-        className="relative mx-auto mt-3 flex max-w-[620px] flex-col gap-[3px] pb-[clamp(95px,13dvh,140px)]"
+        className="relative mx-auto mt-3 flex max-w-[620px] min-[2560px]:max-w-[760px] flex-col gap-[3px] pb-[clamp(95px,13dvh,140px)] [@media(max-height:760px)]:mt-1 [@media(max-height:760px)]:pb-[65px]"
       >
         {keyboardRows.map((row, rowIndex) => (
           <div key={rowIndex} className="flex gap-[3px]">

@@ -87,34 +87,54 @@ export default function SecondaryEditorPane({
     const sourceRef = useRef<HTMLDivElement>(null);
 
     const [textMetrics, setTextMetrics] = useState({
-        fontSize: 11,
+        fontSize: 10,
         lineHeight: 15,
     });
 
     useEffect(() => {
-        const viewport = sourceRef.current;
-        if (!viewport) return;
+        const updateTextSize = () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
 
-        const resizeText= () => {
-            const height = viewport.clientHeight;
+            let fontSize = 10;
+            let lineHeight = 15;
 
-            if (height <= 0) return;
+            if (height < 650) {
+                fontSize = 9;
+                lineHeight = 13;
+            } else if (width >= 2560) {
+                fontSize = 15;
+                lineHeight = 22;
+            } else if (width >= 1800) {
+                fontSize = 13;
+                lineHeight = 19;
+            } else if (width >= 1440) {
+                fontSize = 11;
+                lineHeight = 17;
+            } else if (width < 1200) {
+                fontSize = 9;
+                lineHeight = 14;
+            }
 
-            const logicalHeight = 260;
-            const scale = height / logicalHeight;
+            setTextMetrics((previous) => {
+                if (
+                    previous.fontSize === fontSize &&
+                    previous.lineHeight === lineHeight
+                ) {
+                    return previous;
+                }
 
-            setTextMetrics({
-                fontSize: 7 * scale,
-                lineHeight: 11 * scale,
+                return { fontSize, lineHeight };
             });
         };
 
-        const observer = new ResizeObserver(resizeText);
+        updateTextSize();
 
-        observer.observe(viewport);
-        resizeText();
+        window.addEventListener("resize", updateTextSize);
 
-        return () => observer.disconnect();
+        return () => {
+            window.removeEventListener("resize", updateTextSize);
+        };
     }, []);
 
     const executionPhase = !runRequested

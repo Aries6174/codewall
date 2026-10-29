@@ -499,7 +499,16 @@ export default function IntroTerminal({
             <div
                 ref={terminalOutputRef}
                 data-active={terminalBusy}
-                className="terminal-output h-[clamp(75px,12dvh,140px)] min-w-0 space-y-1 overflow-y-auto px-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="
+                    terminal-output
+                    h-[clamp(75px,12dvh,140px)]
+                    [@media(max-height:760px)]:h-[clamp(64px,10dvh,75px)]
+                    [@media(min-width:2560px)_and_(min-height:761px)]:h-[clamp(140px,12dvh,180px)]
+                    min-w-0 space-y-1 overflow-y-auto
+                    px-3 py-2
+                    [scrollbar-width:none]
+                    [&::-webkit-scrollbar]:hidden
+                "
             >
                 <div className="flex gap-2 text-[10px] leading-[15px]">
                     <span className="text-[#F5C542]">›</span>

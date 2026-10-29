@@ -9,7 +9,7 @@ export default function IntroSidebar() {
     ];
 
     return (
-        <aside className="flex h-full flex-col justify-between border-r border-[#494538] pr-5 font-mono">
+        <aside className="flex h-full min-h-0 flex-col justify-between border-r border-[#494538] pr-5 font-mono">
             
             {/* Navigation */}
             <nav aria-label="Portfolio navigation" className="flex flex-col">

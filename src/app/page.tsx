@@ -429,7 +429,7 @@ export default function Home() {
       className={`relative bg-background text-foreground ${
         showPortfolio
           ? "flex min-h-dvh justify-center px-6 py-12"
-          : "h-dvh overflow-hidden"
+          : `h-dvh overflow-hidden`
       }`}
     >
 
@@ -449,11 +449,16 @@ export default function Home() {
 
           {/* Central intro content */}
 
-          {/* Mobile introduction */}
+          {/* Mobile and Tablet Introduction */}
           <section
-            className={`absolute inset-x-6 top-1/2
-              -translate-y-1/2 text-center
+            data-mobile-intro
+            className={`absolute inset-x-4 top-[64px] bottom-3
+              flex flex-col items-center justify-center text-center
+              min-[425px]:inset-x-6
+              min-[768px]:top-[80px]
+              min-[768px]:bottom-6
               min-[900px]:hidden
+              [@media(max-height:600px)]:top-[56px]
               transition-[opacity,filter] duration-700
               ${
                 isExiting
@@ -461,38 +466,98 @@ export default function Home() {
                   : "opacity-100 blur-0"
               }`}
           >
-            <span className="font-mono text-4xl text-[#F5C542]">
+            {/* Baybayin */}
+            <span
+              className="font-mono text-[30px] leading-none text-[#F5C542]
+                min-[375px]:text-[34px]
+                min-[425px]:text-4xl
+                min-[768px]:text-5xl
+                [@media(max-height:600px)]:text-[28px]"
+            >
               ᜀᜍᜒᜁᜐ᜔
             </span>
 
-            <h1 className="mt-5 font-mono text-3xl font-semibold tracking-[0.15em] text-[#E6DDC9]">
+            {/* Developer Name */}
+            <h1
+              className="mt-4 font-mono text-[26px] font-semibold
+                leading-tight tracking-[0.1em] text-[#E6DDC9]
+                min-[375px]:text-[28px]
+                min-[425px]:text-[30px]
+                min-[768px]:mt-6
+                min-[768px]:text-[40px]
+                [@media(max-height:600px)]:mt-2
+                [@media(max-height:600px)]:text-[25px]"
+            >
               ADRIAN.JS
             </h1>
 
-            <p className="mt-3 font-mono text-[10px] tracking-[0.2em] text-[#92958B]">
+            {/* Developer Details */}
+            <p
+              className="mt-3 font-mono text-[10px] tracking-[0.2em]
+                text-[#92958B]
+                min-[768px]:mt-4
+                min-[768px]:text-xs
+                [@media(max-height:600px)]:mt-2"
+            >
               SOFTWARE DEVELOPER
             </p>
 
-            <p className="mt-1 font-mono text-[10px] text-[#92958B]">
+            <p
+              className="mt-1 font-mono text-[10px] text-[#92958B]
+                min-[768px]:text-xs"
+            >
               BASED IN THE PHILIPPINES
             </p>
 
-            <p className="mx-auto mt-8 max-w-xs font-mono text-xs leading-6 text-[#E6DDC9]">
+            {/* Introduction */}
+            <p
+              className="mx-auto mt-6 max-w-[300px] font-mono
+                text-[12px] leading-5 text-[#E6DDC9]
+                min-[375px]:max-w-[330px]
+                min-[425px]:max-w-sm
+                min-[768px]:mt-8
+                min-[768px]:max-w-md
+                min-[768px]:text-[14px]
+                min-[768px]:leading-6
+                [@media(max-height:600px)]:mt-4"
+            >
               I build digital experiences, explore emerging
               technologies, and turn ideas into real solutions.
             </p>
 
+            {/* Enter System */}
             {!hasEntered && (
               <button
                 type="button"
                 onClick={enterSystem}
-                className="border border-[#F5C542] px-8 py-4 font-mono text-[11px] tracking-[0.2em] text-[#F5C542] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-[#F5C542] hover:text-[#0B0C0B] hover:shadow-[0_0_18px_rgba(245,197,66,0.25)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F5C542] motion-reduce:transform-none"
+                className="mt-6 border border-[#F5C542]
+                  px-5 py-3 font-mono text-[11px]
+                  tracking-[0.2em] text-[#F5C542]
+                  transition-all duration-300 ease-out
+                  hover:-translate-y-0.5
+                  hover:bg-[#F5C542]
+                  hover:text-[#0B0C0B]
+                  hover:shadow-[0_0_18px_rgba(245,197,66,0.25)]
+                  focus-visible:outline-2
+                  focus-visible:outline-offset-4
+                  focus-visible:outline-[#F5C542]
+                  motion-reduce:transform-none
+                  min-[375px]:px-7
+                  min-[768px]:px-10
+                  min-[768px]:py-4
+                  [@media(max-height:600px)]:mt-4"
               >
                 [ ENTER SYSTEM ]
               </button>
             )}
 
-            <p className="mt-6 font-mono text-[10px] tracking-widest text-[#F5C542]">
+            {/* System Status */}
+            <p
+              className="mt-5 font-mono text-[10px]
+                tracking-widest text-[#F5C542]
+                min-[768px]:mt-7
+                [@media(max-height:600px)]:mt-3"
+            >
               ● {message.slice(0, visibleCount)}
               <span className="cursor-blink">_</span>
             </p>
@@ -500,6 +565,8 @@ export default function Home() {
 
           <div
             className={`absolute inset-x-6 top-[78px] bottom-4 z-10
+              [@media(max-height:760px)]:top-[64px]
+              [@media(max-height:760px)]:bottom-2
               hidden min-[900px]:grid
               grid-cols-[minmax(0,1fr)_260px]
               min-[1101px]:grid-cols-[190px_minmax(0,1fr)_300px]
@@ -515,7 +582,7 @@ export default function Home() {
           </div>
 
             {/* Interactive code editor */}
-            <div className="flex h-full min-h-0 w-full min-w-0 flex-col gap-2">
+            <div className="flex h-full min-h-0 w-full min-w-0 flex-col gap-2 [@media(max-height:760px)]:gap-1">
 
               {/* CodeCanvas container */}
               <div className="relative w-full min-w-0 overflow-hidden">
@@ -572,8 +639,21 @@ export default function Home() {
                 />
               </div>
 
-              <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_150px] items-start gap-3">
-               
+              <div
+                data-intro-inputs
+                className="
+                  grid w-full min-w-0
+                  grid-cols-[minmax(0,1fr)_150px]
+                  items-start gap-3
+
+                  min-[1920px]:mx-auto
+                  min-[1920px]:max-w-[960px]
+
+                  min-[2560px]:max-w-[1100px]
+                  min-[2560px]:grid-cols-[minmax(0,1fr)_180px]
+                "
+              >
+  
                 <div className="min-w-0">
                   <IntroKeyboard
                     isMouseActive={activeInput === "mouse"}
@@ -593,13 +673,9 @@ export default function Home() {
             </div>
 
             {/* Developer Introduction */}
-            <div className="relative isolate flex h-full min-h-0 w-full min-w-0 flex-col">
+            <div className="relative isolate flex h-full min-h-0 w-full min-w-0 flex-col [@media(max-height:800px)]:gap-1">
 
-              {/*  */}
-              <div className="relative z-10 flex h-full min-h-0 w-full flex-col gap-3 [text-shadow:0_2px_6px_rgba(0,0,0,0.95)]">
-              
-              {/* Developer Information Content */}
-              <div className="flex flex-col gap-3 [@media(min-height:950px)]:flex-1 [@media(min-height:950px)]:justify-between"></div>
+              <div className="relative z-10 flex h-full min-h-0 w-full flex-col gap-3 [text-shadow:0_2px_6px_rgba(0,0,0,0.95)] [@media(max-height:760px)]:gap-1">
 
               {/* Developer Identity Header */}
               <div className="w-full min-w-0">
@@ -634,7 +710,7 @@ export default function Home() {
                 </h1>
 
                 {/* Developer Details */}
-                <div className="mt-2 gap-1 [@media(min-height:950px)]:mt-4 [@media(min-height:950px)]:gap-2">
+                <div className="mt-2 flex flex-col gap-1 font-mono text-[12px] tracking-[0.1em] text-[#92958B] [@media(min-height:950px)]:mt-4 [@media(min-height:950px)]:gap-2">
                   <p>SOFTWARE DEVELOPER</p>
                   <p>BASED IN THE PHILIPPINES</p>
                 </div>
@@ -642,7 +718,7 @@ export default function Home() {
               </div>
                 
                 {/* Introduction */}
-                <div className="mt-4 w-full min-w-0 [@media(min-height:950px)]:mt-12">
+                <div className="mt-4 w-full min-w-0 [@media(min-height:950px)]:mt-12 [@media(max-height:800px)]:mt-0">
                   <div className="mb-[clamp(8px,1.5dvh,24px)] h-px w-10 bg-[#494538]" />
                     <p className="font-mono text-[12px] leading-5 text-[#E6DDC6]">
                       I build digital experiences,
@@ -651,7 +727,11 @@ export default function Home() {
                     </p>
 
                     {/* Specialties */}
-                    <div className="mt-3 flex flex-col gap-1 font-mono text-[13px] tracking-[0.1em] text-[#92958B] [@media(min-height:950px)]:mt-8 [@media(min-height:950px)]:gap-4">
+                    <div className="mt-3 flex flex-col gap-1 font-mono text-[13px] tracking-[0.1em] text-[#92958B] [@media(min-height:950px)]:mt-8 [@media(min-height:950px)]:gap-4 [@media(max-height:760px)]:mt-1
+                      [@media(max-height:760px)]:gap-0
+                      [@media(max-height:760px)]:text-[11px]
+                      [@media(max-height:760px)]:leading-4"
+                    >
                       <p><span className="text-[#D94B43]">{"//"}</span> WEB APPLICATIONS</p>
                       <p><span className="text-[#D94B43]">{"//"}</span> CREATIVE SYSTEMS</p>
                       <p><span className="text-[#D94B43]">{"//"}</span> OPEN SOURCE</p>
@@ -660,7 +740,9 @@ export default function Home() {
 
                 {/* Enter System */}
                 {!hasEntered && (
-                  <div className="mt-4 flex flex-col gap-2 [@media(min-height:950px)]:mt-12 [@media(min-height:950px)]:gap-4">
+                  <div className="mt-4 flex flex-col gap-2 [@media(min-height:950px)]:mt-12 [@media(min-height:950px)]:gap-4 [@media(max-height:800px)]:mt-0 [@media(max-height:760px)]:mt-1
+                    [@media(max-height:760px)]:gap-1"
+                  >
                     <div className="flex items-center gap-5">
                       <button
                         type="button"
@@ -709,14 +791,18 @@ export default function Home() {
                 )}
 
                 {/* System  Readout */}
-                <div className="mt-[clamp(16px,3dvh,36px)] w-full border-t border-[#494538] pt-3">
+                <div
+                  id="system-readout"
+                  className="mt-[clamp(16px,3dvh,36px)] w-full border-t border-[#494538] pt-3 [@media(max-height:760px)]:mt-1 [@media(max-height:760px)]:pt-2"
+                >
 
                   <p className="mb-2 font-mono text-[10px] tracking-[0.15em] text-[#92958B]">
                     SYSTEM READOUT
                   </p>
 
-                  <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 font-mono text-[10px]">
-
+                  <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 font-mono text-[10px] [@media(max-height:760px)]:gap-y-0
+                    [@media(max-height:760px)]:leading-4"
+                  >
                     <span className="text-[#92958B]">› PATCH MODE</span>
                     <span className="text-[#F5C542] text-right">
                       {patchPhase.toUpperCase()}

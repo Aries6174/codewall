@@ -21,7 +21,13 @@ export default function IntroLocationGraphic({
       </div>
 
       {/* Map and marker container */}
-      <div className="relative mt-3 w-[110%]">
+      <div
+        className="
+          relative mt-3
+          w-[110%]
+          [@media(max-height:760px)]:w-[85%]
+        "
+      >
         <Image
           src="/philippines-dots.svg"
           alt="Dot-matrix map of the Philippines"
