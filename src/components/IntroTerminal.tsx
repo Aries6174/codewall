@@ -82,7 +82,6 @@ export default function IntroTerminal({
     isVisitorIdle,
     onStatusChange,
 }: IntroTerminalProps) {
-    const terminalOutputRef = useRef<HTMLDivElement>(null);
     const patchPendingRef = useRef(false);
 
     const [commandIndex, setCommandIndex] = useState(0);
@@ -239,6 +238,38 @@ export default function IntroTerminal({
         }
     }), []);
 
+    useEffect(() => {
+        if (!secondaryEditComplete) return;
+
+        setHistory((previous) =>
+            previous.map((entry) =>
+                entry.input === "editor.open preview.ts" &&
+                entry.output === "Opening secondary editor..."
+                    ? {
+                        ...entry,
+                        output: "Secondary editor ready.",
+                    }
+                    : entry
+            )
+        );
+    }, [secondaryEditComplete]);
+
+    useEffect(() => {
+        if (!secondaryExecutionComplete) return;
+
+        setHistory((previous) =>
+            previous.map((entry) =>
+                entry.input === "editor.run preview.ts" &&
+                entry.output === "Executing preview..."
+                    ? {
+                        ...entry,
+                        output: "Preview executed successfully.",
+                    }
+                    : entry
+            )
+        );
+    }, [secondaryExecutionComplete]);
+
     // Automatic terminal typing
     useEffect(() => {
         if (!currentCommand) return;
@@ -337,15 +368,6 @@ export default function IntroTerminal({
         manualInput
     ]);
 
-    // Keep terminal scrolled to latest output
-    useEffect(() => {
-        const terminal = terminalOutputRef.current;
-
-        if (!terminal) return;
-
-        terminal.scrollTop = terminal.scrollHeight;
-    }, [history, visibleCount]);
-
     // Process manual terminal commands
     const handleManualCommand = () => {
         const input = manualInput.trim().toLowerCase();
@@ -442,6 +464,33 @@ export default function IntroTerminal({
                     : "EXECUTING";
 
     const terminalBusy = terminalStatus !== "READY";
+        
+    const latestResult = history[history.length - 1];
+
+    const resultMessage =
+        latestResult?.output.split("\n").at(-1) ??
+        "Waiting for command...";
+
+    const resultIsError =
+        /not found|already queued|error/i.test(resultMessage);
+
+    const resultIsRunning =
+        /applying|navigating|executing|opening|initializing/i.test(resultMessage) &&
+        !/completed|located|ready/i.test(resultMessage);
+
+    const resultLabel = !latestResult
+        ? "READY"
+        : resultIsError
+            ? "ERR"
+            : resultIsRunning
+                ? "RUN"
+                : "OK";
+
+    const resultColor = resultIsError
+        ? "text-[#D94B43]"
+        : resultIsRunning
+            ? "text-[#F5C542]"
+            : "text-[#59C9A5]";
 
     useEffect(() => {
         onStatusChange(terminalStatus);
@@ -462,10 +511,6 @@ export default function IntroTerminal({
                         <p className="text-[11px] font-semibold tracking-[0.1em] text-[#E6DDC9]">
                             SYS://TERMINAL
                             <span className="text-[#F5C542]">_</span>
-                        </p>
-
-                        <p className="text-[8px] tracking-[0.08em] text-[#92958B]">
-                            SESSION_001 / COMMAND INTERFACE
                         </p>
                     </div>
                 </div>
@@ -495,114 +540,46 @@ export default function IntroTerminal({
                 aria-hidden="true"
             />
 
-            {/* TERMINAL HISTORY */}
+            {/* SINGLE COMMAND STATUS */}
             <div
-                ref={terminalOutputRef}
-                data-active={terminalBusy}
+                data-terminal-result
+                role="status"
+                aria-live="polite"
                 className="
-                    terminal-output
-                    h-[clamp(75px,12dvh,140px)]
-                    [@media(max-height:760px)]:h-[clamp(64px,10dvh,75px)]
-                    [@media(min-width:2560px)_and_(min-height:761px)]:h-[clamp(140px,12dvh,180px)]
-                    min-w-0 space-y-1 overflow-y-auto
-                    px-3 py-2
-                    [scrollbar-width:none]
-                    [&::-webkit-scrollbar]:hidden
+                    flex h-9 min-w-0 items-center gap-3
+                    overflow-hidden px-3
+                    font-mono text-[10px]
                 "
             >
-                <div className="flex gap-2 text-[10px] leading-[15px]">
-                    <span className="text-[#F5C542]">›</span>
-                    <span className="text-[#92958B]">[SYS]</span>
-                    <span className="text-[#92958B]">
-                        Runtime initialized successfully
-                    </span>
-                </div>
-
-                {/* COMPLETED COMMAND HISTORY */}
-                {history.map((entry, index) => {
-                    const isError =
-                        /not found|already queued|error/i.test(entry.output);
-
-                    const isRunning =
-                        /applying|navigating|executing|opening/i.test(entry.output) &&
-                        !/completed|located/i.test(entry.output);
-
-                    const label = isError
-                        ? "ERR"
-                        : isRunning
-                            ? "RUN"
-                            : "OK";
-
-                    return (
-                        <div key={index} className="min-w-0 space-y-0.5">
-
-                            {/* Command */}
-                            <div className="flex min-w-0 items-start gap-2 text-[10px] leading-[15px]">
-                                <span className="shrink-0 text-[#F5C542]">
-                                    ›
-                                </span>
-
-                                <span className="shrink-0 text-[#92958B]">
-                                    [CMD]
-                                </span>
-
-                                <span className="min-w-0 break-words text-[#E6DDC9]">
-                                    {entry.input}
-                                </span>
-                            </div>
-
-                            {/* Command result */}
-                            <div className="flex min-w-0 items-start gap-2 pl-3 text-[10px] leading-[15px]">
-
-                                <span className={
-                                    isError
-                                        ? "text-[#D94B43]"
-                                        : isRunning
-                                            ? "text-[#F5C542]"
-                                            : "text-[#59C9A5]"
-                                }>
-                                    {isError ? "×" : isRunning ? "◇" : "✓"}
-                                </span>
-
-                                <span className={
-                                    isError
-                                        ? "text-[#D94B43]"
-                                        : isRunning
-                                            ? "text-[#F5C542]"
-                                            : "text-[#59C9A5]"
-                                }>
-                                    [{label}]
-                                </span>
-
-                                <span className="min-w-0 whitespace-pre-line break-words text-[#92958B]">
-                                    {entry.output}
-                                </span>
-                            </div>
-                        </div>
-                    );
-                })}
-
-                {/* AUTOMATIC COMMAND TYPING */}
-                {currentCommand && (
-                    <div className="flex min-w-0 items-start gap-2 text-[10px] leading-[15px]">
+                {currentCommand && manualInput.trim().length === 0 ? (
+                    <>
                         <span className="shrink-0 text-[#F5C542]">
-                            ›
+                            [TYPING]
                         </span>
 
-                        <span className="shrink-0 text-[#92958B]">
-                            [CMD]
-                        </span>
-
-                        <span className="min-w-0 break-words text-[#E6DDC9]">
+                        <span className="min-w-0 truncate text-[#E6DDC9]">
                             {typingFrames[visibleCount - 1]?.text ?? ""}
-
                             <span className="cursor-blink text-[#F5C542]">
                                 _
                             </span>
                         </span>
-                    </div>
+                    </>
+                ) : (
+                    <>
+                        <span className={`shrink-0 font-semibold ${resultColor}`}>
+                            [{resultLabel}]
+                        </span>
+
+                        <span
+                            className="min-w-0 truncate text-[#92958B]"
+                            title={resultMessage}
+                        >
+                            {resultMessage}
+                        </span>
+                    </>
                 )}
             </div>
+
 
             {/* SEPARATE COMMAND INPUT */}
             <div className="terminal-prompt flex min-w-0 items-center gap-2 border-t border-[#494538]/40 px-3 py-2">
@@ -682,35 +659,6 @@ export default function IntroTerminal({
                     className="min-w-0 flex-1 bg-transparent text-[10px] text-[#E6DDC9] outline-none caret-[#F5C542] placeholder:text-[#92958B]/50"
                 />
             </div>
-
-            {/* SYSTEM FOOTER */}
-            <div className="flex items-center justify-between gap-2 border-t border-[#494538]/30 px-3 py-1.5 text-[8px] tracking-wider text-[#92958B]">
-
-                <div className="flex items-center gap-3">
-                    <span>
-                        <span className="text-[#59C9A5]">●</span>
-                        {" "}LOCAL ACTIVE
-                    </span>
-
-                    <span>INPUT: ENABLED</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <div
-                        className={`terminal-meter ${
-                            terminalBusy ? "terminal-meter-active" : ""
-                        }`}
-                        aria-hidden="true"
-                    >
-                        <span />
-                        <span />
-                        <span />
-                    </div>
-
-                    <span>SYS.001</span>
-                </div>
-            </div>
-
         </div>
     );
 

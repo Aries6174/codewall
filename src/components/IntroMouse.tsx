@@ -95,7 +95,7 @@ export default function IntroMouse({
     }, []);
 
   return (
-    <div className="w-full max-w-[180px] font-mono">
+    <div className="w-full max-w-[120px] min-[2560px]:max-w-[140px] font-mono">
       {/* Header */}
       <div className="flex justify-between text-[9px] tracking-widest text-[#92958B]">
         <span>INPUT / MOUSE</span>
@@ -108,7 +108,7 @@ export default function IntroMouse({
       <svg
         data-intro-mouse
         viewBox="0 0 180 220"
-        className="mt-3 h-auto w-full"
+        className="mx-auto mt-3 h-auto w-full [zoom:0.70] min-[2560px]:[zoom:0.75]"
         fill="none"
         strokeLinecap="round"
         strokeLinejoin="round"

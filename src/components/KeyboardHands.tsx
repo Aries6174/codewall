@@ -115,6 +115,34 @@ const handLayouts: Record<
   },
 };
 
+const HAND_SCALE = 0.78;
+
+function scaleHand(
+  side: HandSide
+): Record<FingerName, FingerLayout> {
+  const scaled = {} as Record<FingerName, FingerLayout>;
+
+  for (const name of fingerNames) {
+    const finger = handLayouts[side][name];
+
+    scaled[name] = {
+      baseX: finger.baseX * HAND_SCALE,
+      baseY: finger.baseY * HAND_SCALE,
+      tipX: finger.tipX * HAND_SCALE,
+      tipY: finger.tipY * HAND_SCALE,
+      upper: finger.upper * HAND_SCALE,
+      lower: finger.lower * HAND_SCALE,
+    };
+  }
+
+  return scaled;
+}
+
+const smallerHandLayouts = {
+  left: scaleHand("left"),
+  right: scaleHand("right"),
+};
+
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
@@ -240,7 +268,7 @@ export default function KeyboardHands({
           ? homePosition
           : fallback;
 
-      return safePosition + (side === "left" ? -18 : 18);
+      return safePosition + (side === "left" ? -18 : 18) * HAND_SCALE;
     },
     [homePositions.left, homePositions.right, width]
   );
@@ -389,7 +417,7 @@ export default function KeyboardHands({
       let moving = false;
 
       for (const side of ["left", "right"] as const) {
-        const layout = handLayouts[side];
+        const layout = smallerHandLayouts[side];
         const restingX = getRestingX(side);
         const restingY = height - 22;
 
@@ -559,7 +587,7 @@ export default function KeyboardHands({
   ]);
 
   const renderHand = (side: HandSide) => {
-    const layout = handLayouts[side];
+    const layout = smallerHandLayouts[side];
 
     const restingX = getRestingX(side);
     const shift = frame.shifts[side];

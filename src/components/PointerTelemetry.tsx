@@ -99,13 +99,6 @@ export default function PointerTelemetry() {
   return (
     <>
       <span className="text-[#92958B]">
-        › CURSOR VELOCITY
-      </span>
-      <span className="text-right tabular-nums text-[#F5C542]">
-        {telemetry.velocity.toFixed(2)} px/s
-      </span>
-
-      <span className="text-[#92958B]">
         › MOVEMENT VECTOR
       </span>
       <span className="text-right text-[#F5C542]">

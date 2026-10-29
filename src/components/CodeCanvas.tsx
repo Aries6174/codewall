@@ -10,31 +10,31 @@ const codeCanvasSizes = {
     compact: {
         fontSize: 11,
         lineHeight: 16,
-        canvasHeight: "30dvh",
+        canvasHeight: "38dvh",
     },
 
     screen1024: {
         fontSize: 9,
         lineHeight: 13,
-        canvasHeight: "30dvh",
+        canvasHeight: "38dvh",
     },
 
     screen1366: {
         fontSize: 11,
         lineHeight: 16,
-        canvasHeight: "32dvh",
+        canvasHeight: "40dvh",
     },
 
     screen1600: {
         fontSize: 12,
         lineHeight: 18,
-        canvasHeight: "35dvh",
+        canvasHeight: "43dvh",
     },
 
     screen1920: {
         fontSize: 14,
         lineHeight: 21,
-        canvasHeight: "35dvh",
+        canvasHeight: "43dvh",
     },
 };
 

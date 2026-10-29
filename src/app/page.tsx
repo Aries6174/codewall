@@ -7,8 +7,6 @@ import CodeCanvas from "@/components/CodeCanvas";
 import IntroTopBar from "@/components/IntroTopBar";
 import SecondaryEditorPane from "@/components/SecondaryEditorPane";
 import IntroTerminal, { type IntroTerminalHandle } from "@/components/IntroTerminal";
-import IntroAtmosphere from "@/components/IntroAtmosphere"
-import IntroSidebar from "@/components/IntroSidebar";
 import IntroKeyboard from "@/components/IntroKeyboard";
 import IntroMouse from "@/components/IntroMouse";
 import PointerTracker from "@/components/PointerTracker"
@@ -564,23 +562,18 @@ export default function Home() {
           </section>
 
           <div
-            className={`absolute inset-x-6 top-[78px] bottom-4 z-10
+            className={`absolute inset-x-[15%] top-[78px] bottom-4 z-10
               [@media(max-height:760px)]:top-[64px]
               [@media(max-height:760px)]:bottom-2
               hidden min-[900px]:grid
               grid-cols-[minmax(0,1fr)_260px]
-              min-[1101px]:grid-cols-[190px_minmax(0,1fr)_300px]
-              min-[1440px]:grid-cols-[190px_minmax(0,1fr)_340px]
+              min-[1101px]:grid-cols-[minmax(0,1fr)_300px]
+              min-[1440px]:grid-cols-[minmax(0,1fr)_340px]
               grid-rows-[minmax(0,1fr)]
               items-stretch gap-4
               transition-[opacity,filter] duration-700 ease-in-out
               ${isExiting ? "opacity-0 blur-sm" : "opacity-100 blur-0"}`}
           >
-
-          <div className="hidden min-w-0 self-stretch min-[1101px]:block">
-              <IntroSidebar />
-          </div>
-
             {/* Interactive code editor */}
             <div className="flex h-full min-h-0 w-full min-w-0 flex-col gap-2 [@media(max-height:760px)]:gap-1">
 
@@ -599,7 +592,7 @@ export default function Home() {
                 {/* Secondary editor overlays CodeCanvas */}
                 {isSplit && (
                   <div
-                    className={`absolute inset-y-0 right-0 z-10 w-1/2 overflow-hidden
+                    className={`flex h-full w-full min-w-0 flex-col z-10 w-1/2 overflow-hidden
                       border-l border-[#494538]/40
                       bg-[#080A09]/25 backdrop-blur-[6px]
                       ${
@@ -642,15 +635,12 @@ export default function Home() {
               <div
                 data-intro-inputs
                 className="
-                  grid w-full min-w-0
-                  grid-cols-[minmax(0,1fr)_150px]
+                  mx-auto grid w-full min-w-0
+                  max-w-[590px]
+                  min-[2560px]:max-w-[700px]
+                  grid-cols-[minmax(0,1fr)_120px]
+                  min-[2560px]:grid-cols-[minmax(0,1fr)_140px]
                   items-start gap-3
-
-                  min-[1920px]:mx-auto
-                  min-[1920px]:max-w-[960px]
-
-                  min-[2560px]:max-w-[1100px]
-                  min-[2560px]:grid-cols-[minmax(0,1fr)_180px]
                 "
               >
   

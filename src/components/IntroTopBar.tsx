@@ -16,6 +16,7 @@ export default function IntroTopBar({
         min-[425px]:px-4
         min-[768px]:px-6
         min-[768px]:py-5
+        min-[900px]:px-[15%]
         transition-opacity duration-700
         ${isExiting ? "opacity-0" : "opacity-100"}`}
     >
