@@ -32,8 +32,6 @@ export default function Home() {
   const [isVisitorIdle, setIsVisitorIdle] = useState(false);
   const lastInteractionRef = useRef(0);
   const terminalRef = useRef<IntroTerminalHandle>(null);
-  const sceneRef = useRef<HTMLDivElement>(null);
-  const [sceneScale, setSceneScale] = useState(1);
   const [activeInput, setActiveInput] = useState<"keyboard" | "mouse">("keyboard");
   const [mouseOffset, setMouseOffset] = useState({
     x: 0,
@@ -232,88 +230,6 @@ export default function Home() {
       window.removeEventListener("wheel", handleActivity);
   
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    const scene = sceneRef.current;
-    if (!scene) return;
-
-    let frameId: number | null = null;
-
-    const updateScale = () => {
-      if (frameId !== null) {
-        cancelAnimationFrame(frameId);
-      }
-
-      frameId = requestAnimationFrame(() => {
-        frameId = null;
-
-        // Reset scaling when the mobile layout is active.
-        if (window.innerWidth < 900) {
-          setSceneScale(1);
-          return;
-        }
-
-        const headerSpace = 72;
-        const footerSpace = 24;
-
-        const availableWidth = Math.max(
-          1,
-          window.innerWidth - 32
-        );
-
-        const availableHeight = Math.max(
-          1,
-          window.innerHeight - headerSpace - footerSpace
-        );
-
-        const sceneWidth = scene.offsetWidth;
-        const sceneHeight = scene.offsetHeight;
-
-        // Never calculate scale from hidden elements.
-        if (sceneWidth <= 0 || sceneHeight <= 0) {
-          return;
-        }
-
-        const nextScale = Math.max(
-          0.1,
-          Math.min(
-            1,
-            availableWidth / sceneWidth,
-            availableHeight / sceneHeight
-          )
-        );
-
-        setSceneScale((previous) =>
-          Math.abs(previous - nextScale) < 0.001
-            ? previous
-            : nextScale
-        );
-      });
-    };
-
-    const observer = new ResizeObserver(updateScale);
-    const breakpoint = window.matchMedia(
-      "(min-width: 900px)"
-    );
-
-    observer.observe(scene);
-
-    window.addEventListener("resize", updateScale);
-    breakpoint.addEventListener("change", updateScale);
-
-    updateScale();
-
-    return () => {
-      observer.disconnect();
-
-      window.removeEventListener("resize", updateScale);
-      breakpoint.removeEventListener("change", updateScale);
-
-      if (frameId !== null) {
-        cancelAnimationFrame(frameId);
-      }
     };
   }, []);
 
@@ -583,32 +499,23 @@ export default function Home() {
           </section>
 
           <div
-            ref={sceneRef}
-            className={`absolute z-10 left-1/2 top-[calc(50%+24px)]
-              hidden w-[calc(100vw-48px)] max-w-[1720px]
-              grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]
-              min-[900px]:grid
-              min-[1101px]:grid-cols-[190px_minmax(0,2.7fr)_minmax(0,0.9fr)]
-              min-[1440px]:grid-cols-[190px_minmax(0,1fr)_360px]
-              items-start gap-4 px-4
+            className={`absolute inset-x-6 top-[78px] bottom-4 z-10
+              hidden min-[900px]:grid
+              grid-cols-[minmax(0,1fr)_260px]
+              min-[1101px]:grid-cols-[190px_minmax(0,1fr)_300px]
+              min-[1440px]:grid-cols-[190px_minmax(0,1fr)_340px]
+              grid-rows-[minmax(0,1fr)]
+              items-stretch gap-4
               transition-[opacity,filter] duration-700 ease-in-out
-              ${
-                isExiting
-                  ? "opacity-0 blur-sm"
-                  : "opacity-100 blur-0"
-              }`}
-            style={{
-              transform: `translate(calc(-50% - 4vw), -50%) scale(${sceneScale})`,
-              transformOrigin: "center",
-            }}
+              ${isExiting ? "opacity-0 blur-sm" : "opacity-100 blur-0"}`}
           >
 
-          <div className="hidden min-w-0 self-stretch min-[1101px]:block min-[1440px]:-translate-x-[230px]">
-            <IntroSidebar />
+          <div className="hidden min-w-0 self-stretch min-[1101px]:block">
+              <IntroSidebar />
           </div>
 
             {/* Interactive code editor */}
-            <div className="flex min-w-0 flex-col items-start gap-[clamp(8px,1.3dvh,16px)] min-[1440px]:-ml-[220px] min-[1440px]:w-[calc(100%+220px)]">
+            <div className="flex h-full min-h-0 w-full min-w-0 flex-col gap-2">
 
               {/* CodeCanvas container */}
               <div className="relative w-full min-w-0 overflow-hidden">
@@ -686,13 +593,16 @@ export default function Home() {
             </div>
 
             {/* Developer Introduction */}
-            <div className="relative isolate flex min-w-0 self-stretch flex-col items-start gap-2 w-[calc(100%+80px)]">
+            <div className="relative isolate flex h-full min-h-0 w-full min-w-0 flex-col">
 
               {/*  */}
-              <div className="relative z-10 mt-[clamp(8px,2dvh,32px)] flex w-full min-w-0 flex-1 flex-col items-start gap-[clamp(4px,0.7dvh,8px)] [text-shadow:0_2px_6px_rgba(0,0,0,0.95)]">
-                
+              <div className="relative z-10 flex h-full min-h-0 w-full flex-col gap-3 [text-shadow:0_2px_6px_rgba(0,0,0,0.95)]">
+              
+              {/* Developer Information Content */}
+              <div className="flex flex-col gap-3 [@media(min-height:950px)]:flex-1 [@media(min-height:950px)]:justify-between"></div>
+
               {/* Developer Identity Header */}
-              <div className="w-[calc(100%+80px)] max-w-[440px] min-w-0">
+              <div className="w-full min-w-0">
 
                 {/* Identification */}
                 <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#494538]/60 pb-2 font-mono text-[9px] tracking-[0.12em]">
@@ -724,7 +634,7 @@ export default function Home() {
                 </h1>
 
                 {/* Developer Details */}
-                <div className="mt-2 flex flex-col gap-1 font-mono text-[12px] tracking-[0.1em] text-[#92958B]">
+                <div className="mt-2 gap-1 [@media(min-height:950px)]:mt-4 [@media(min-height:950px)]:gap-2">
                   <p>SOFTWARE DEVELOPER</p>
                   <p>BASED IN THE PHILIPPINES</p>
                 </div>
@@ -732,16 +642,16 @@ export default function Home() {
               </div>
                 
                 {/* Introduction */}
-                <div className="mt-[clamp(12px,2.5dvh,32px)] w-full max-w-[340px]">
+                <div className="mt-4 w-full min-w-0 [@media(min-height:950px)]:mt-12">
                   <div className="mb-[clamp(8px,1.5dvh,24px)] h-px w-10 bg-[#494538]" />
-                    <p className="font-mono text-[px] leading-6 text-[#E6DDC6]">
+                    <p className="font-mono text-[12px] leading-5 text-[#E6DDC6]">
                       I build digital experiences,
                       explore emerging technologies,
                       and turn ideas into real solutions.
                     </p>
 
                     {/* Specialties */}
-                    <div className="mt-[clamp(10px,2dvh,28px)] flex flex-col gap-2 font-mono text-[13px] tracking-[0.1em] tracking-[0.1em] text-[#92958B]">
+                    <div className="mt-3 flex flex-col gap-1 font-mono text-[13px] tracking-[0.1em] text-[#92958B] [@media(min-height:950px)]:mt-8 [@media(min-height:950px)]:gap-4">
                       <p><span className="text-[#D94B43]">{"//"}</span> WEB APPLICATIONS</p>
                       <p><span className="text-[#D94B43]">{"//"}</span> CREATIVE SYSTEMS</p>
                       <p><span className="text-[#D94B43]">{"//"}</span> OPEN SOURCE</p>
@@ -750,12 +660,12 @@ export default function Home() {
 
                 {/* Enter System */}
                 {!hasEntered && (
-                  <div className="mt-[clamp(12px,2.5dvh,32px)] flex flex-col gap-3">
+                  <div className="mt-4 flex flex-col gap-2 [@media(min-height:950px)]:mt-12 [@media(min-height:950px)]:gap-4">
                     <div className="flex items-center gap-5">
                       <button
                         type="button"
                         onClick={enterSystem}
-                        className="border border-[#F5C542] px-8 py-4 font-mono text-[11px] tracking-[0.2em] text-[#F5C542] transition-colors duration-300 hover:bg-[#F5C542] hover:text-[#0B0C0B]">
+                        className="border border-[#F5C542] px-6 py-3 font-mono text-[11px] tracking-[0.2em] text-[#F5C542] transition-colors duration-300 hover:bg-[#F5C542] hover:text-[#0B0C0B]">
                           [ ENTER SYSTEM ]
                         </button>
 
@@ -799,13 +709,13 @@ export default function Home() {
                 )}
 
                 {/* System  Readout */}
-                <div className="mt-3 w-full max-w-[340px] border-t border-[#494538] pt-3">
+                <div className="mt-[clamp(16px,3dvh,36px)] w-full border-t border-[#494538] pt-3">
 
                   <p className="mb-2 font-mono text-[10px] tracking-[0.15em] text-[#92958B]">
                     SYSTEM READOUT
                   </p>
 
-                  <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 font-mono text-[10px]">
+                  <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 font-mono text-[10px]">
 
                     <span className="text-[#92958B]">› PATCH MODE</span>
                     <span className="text-[#F5C542] text-right">
