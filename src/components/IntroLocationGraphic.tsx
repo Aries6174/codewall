@@ -21,7 +21,7 @@ export default function IntroLocationGraphic({
       </div>
 
       {/* Map and marker container */}
-      <div className="relative mt-3 w-full">
+      <div className="relative mt-3 w-[110%]">
         <Image
           src="/philippines-dots.svg"
           alt="Dot-matrix map of the Philippines"
@@ -83,7 +83,7 @@ export default function IntroLocationGraphic({
               y={marker.y - 16}
               textAnchor="end"
               fill="#F5C542"
-              fontSize="7"
+              fontSize="9"
               fontFamily="monospace"
               letterSpacing="0.5"
             >

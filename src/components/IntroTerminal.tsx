@@ -68,6 +68,7 @@ type IntroTerminalProps = {
     isVisitorIdle: boolean;
     ref?: React.Ref<IntroTerminalHandle>
     onAutoKey: (key: string) => void;
+    onStatusChange: (status: string) => void;
 };
 
 export default function IntroTerminal({
@@ -78,7 +79,8 @@ export default function IntroTerminal({
     onEnterSystem,
     secondaryEditComplete,
     secondaryExecutionComplete,
-    isVisitorIdle
+    isVisitorIdle,
+    onStatusChange,
 }: IntroTerminalProps) {
     const terminalOutputRef = useRef<HTMLDivElement>(null);
     const patchPendingRef = useRef(false);
@@ -236,11 +238,6 @@ export default function IntroTerminal({
             });
         }
     }), []);
-
-    // Automatic terminal typing
-    useEffect(() => {
-        // Keep your existing automatic typing logic here.
-    }, []);
 
     // Automatic terminal typing
     useEffect(() => {
@@ -446,6 +443,10 @@ export default function IntroTerminal({
 
     const terminalBusy = terminalStatus !== "READY";
 
+    useEffect(() => {
+        onStatusChange(terminalStatus);
+    }, [terminalStatus, onStatusChange]);
+
     return (
         <div className="terminal-shell w-full min-w-0 font-mono">
 
@@ -498,7 +499,7 @@ export default function IntroTerminal({
             <div
                 ref={terminalOutputRef}
                 data-active={terminalBusy}
-                className="terminal-output min-h-0 flex-1 min-w-0 space-y-1 overflow-y-auto px-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="terminal-output h-[clamp(75px,12dvh,140px)] min-w-0 space-y-1 overflow-y-auto px-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
                 <div className="flex gap-2 text-[10px] leading-[15px]">
                     <span className="text-[#F5C542]">›</span>

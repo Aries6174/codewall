@@ -185,6 +185,42 @@ export default function KeyboardHands({
   >({});
   const [leftMousePressed, setLeftMousePressed] = useState(false);
   const [rightMousePressed, setRightMousePressed] = useState(false);
+  const [isWheelScrolling, setIsWheelScrolling] = useState(false);
+  const [wheelFingerOffset, setWheelFingerOffset] = useState(0);
+
+  useEffect(() => {
+    let resetTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (event.deltaY === 0) return;
+
+      const direction = event.deltaY > 0 ? 1 : -1;
+
+      setIsWheelScrolling(true);
+
+      // Alternate finger position while scrolling.
+      setWheelFingerOffset((previous) =>
+        previous === direction * 7 ? 0 : direction * 7
+      );
+
+      clearTimeout(resetTimer);
+
+      // Return the finger to the left mouse button.
+      resetTimer = setTimeout(() => {
+        setWheelFingerOffset(0);
+        setIsWheelScrolling(false);
+      }, 300);
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: true });
+
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      clearTimeout(resetTimer);
+    };
+  }, []);
+
+
 
   void isMouseActive;
 
@@ -259,7 +295,10 @@ export default function KeyboardHands({
 
       // Resting positions for each finger
       setMouseFingerTargets({
-        index: toKeyboardPoint(68, 52),
+        index: toKeyboardPoint(
+          isWheelScrolling ? 90: 68,
+          isWheelScrolling ? 50 + wheelFingerOffset : 52
+        ),
         middle: toKeyboardPoint(112,52),
         ring: toKeyboardPoint(128, 72),
         pinky: toKeyboardPoint(132, 87),
@@ -282,7 +321,7 @@ export default function KeyboardHands({
       window.removeEventListener("resize", updateMousePosition);
       window.removeEventListener("scroll", updateMousePosition, true);
     };
-  }, [isMouseActive, width, height, mouseOffset.x, mouseOffset.y]);
+  }, [isMouseActive, width, height, mouseOffset.x, mouseOffset.y, wheelFingerOffset,]);
 
   useEffect(() => {
     const handleMouseDown = (event: MouseEvent) => {
@@ -334,8 +373,8 @@ export default function KeyboardHands({
       lastTime = time;
 
       // Smaller response time means faster movement.
-      const wristAmount = 1 - Math.exp(-deltaTime / 125);
-      const fingerAmount = 1 - Math.exp(-deltaTime / 85);
+      const wristAmount = 1 - Math.exp(-deltaTime / 115);
+      const fingerAmount = 1 - Math.exp(-deltaTime / 30);
 
       const previous = frameRef.current;
 
@@ -636,6 +675,10 @@ export default function KeyboardHands({
 
       const active =
         mouseClickActive ||
+        (side === "right" &&
+          isMouseActive &&
+          isWheelScrolling &&
+          name === "index") ||
         (!(side === "right" && isMouseActive) &&
           Boolean(fingerTargets[id]));
 

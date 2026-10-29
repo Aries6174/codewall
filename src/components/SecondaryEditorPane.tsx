@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useRef, useEffect, useState } from "react";
 import { editorSequence } from "@/data/editorFiles";
 import { glitchCharacters } from "@/data/glitchCharacters";
 import { createTypingFrames } from "@/utils/realisticTyping";
@@ -83,6 +83,39 @@ export default function SecondaryEditorPane({
     const [insertedLines, setInsertedLines] = useState<string[]>([]);
     const [insertionComplete, setInsertionComplete] = useState(false);
     const [executionComplete, setExecutionComplete] = useState(false);
+    
+    const sourceRef = useRef<HTMLDivElement>(null);
+
+    const [textMetrics, setTextMetrics] = useState({
+        fontSize: 11,
+        lineHeight: 15,
+    });
+
+    useEffect(() => {
+        const viewport = sourceRef.current;
+        if (!viewport) return;
+
+        const resizeText= () => {
+            const height = viewport.clientHeight;
+
+            if (height <= 0) return;
+
+            const logicalHeight = 260;
+            const scale = height / logicalHeight;
+
+            setTextMetrics({
+                fontSize: 7 * scale,
+                lineHeight: 11 * scale,
+            });
+        };
+
+        const observer = new ResizeObserver(resizeText);
+
+        observer.observe(viewport);
+        resizeText();
+
+        return () => observer.disconnect();
+    }, []);
 
     const executionPhase = !runRequested
         ? "idle"
@@ -362,15 +395,18 @@ export default function SecondaryEditorPane({
 
             {/* Source code viewport */}
             <div
-                className={`min-h-0 flex-1 overflow-hidden px-2 font-mono text-[10px] leading-[12px] ${
+                ref={sourceRef}
+                className={`min-h-0 flex-1 overflow-hidden px-2 font-mono ${
                     executionPhase === "running" ? "animate-pulse" : ""
                 }`}
                 style={{
+                    fontSize: `${textMetrics.fontSize}px`,
+                    lineHeight: `${textMetrics.lineHeight}px`,
                     maskImage:
-                        "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)"
+                        "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)",
                 }}
             >
-                
+                            
             {/* Source lines with an inline patch */}
             {systemLines.slice(0, visibleLines).map((line, index) => (
                 <Fragment key={line.lineNumber}>

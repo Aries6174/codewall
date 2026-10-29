@@ -19,6 +19,7 @@ type PatchPhase = "idle" | "running" | "complete";
 export default function Home() {
   // States
   const [terminalCommand, setTerminalCommand] = useState("");
+  const [terminalStatus, setTerminalStatus] = useState("READY");
   const [secondaryCommand, setSecondaryCommand] = useState("");
   const [patchPhase, setPatchPhase] = useState<PatchPhase>("idle");
   const [isSplit, setIsSplit] = useState(false);
@@ -31,6 +32,8 @@ export default function Home() {
   const [isVisitorIdle, setIsVisitorIdle] = useState(false);
   const lastInteractionRef = useRef(0);
   const terminalRef = useRef<IntroTerminalHandle>(null);
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const [sceneScale, setSceneScale] = useState(1);
   const [activeInput, setActiveInput] = useState<"keyboard" | "mouse">("keyboard");
   const [mouseOffset, setMouseOffset] = useState({
     x: 0,
@@ -233,6 +236,88 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    let frameId: number | null = null;
+
+    const updateScale = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
+
+        // Reset scaling when the mobile layout is active.
+        if (window.innerWidth < 900) {
+          setSceneScale(1);
+          return;
+        }
+
+        const headerSpace = 72;
+        const footerSpace = 24;
+
+        const availableWidth = Math.max(
+          1,
+          window.innerWidth - 32
+        );
+
+        const availableHeight = Math.max(
+          1,
+          window.innerHeight - headerSpace - footerSpace
+        );
+
+        const sceneWidth = scene.offsetWidth;
+        const sceneHeight = scene.offsetHeight;
+
+        // Never calculate scale from hidden elements.
+        if (sceneWidth <= 0 || sceneHeight <= 0) {
+          return;
+        }
+
+        const nextScale = Math.max(
+          0.1,
+          Math.min(
+            1,
+            availableWidth / sceneWidth,
+            availableHeight / sceneHeight
+          )
+        );
+
+        setSceneScale((previous) =>
+          Math.abs(previous - nextScale) < 0.001
+            ? previous
+            : nextScale
+        );
+      });
+    };
+
+    const observer = new ResizeObserver(updateScale);
+    const breakpoint = window.matchMedia(
+      "(min-width: 900px)"
+    );
+
+    observer.observe(scene);
+
+    window.addEventListener("resize", updateScale);
+    breakpoint.addEventListener("change", updateScale);
+
+    updateScale();
+
+    return () => {
+      observer.disconnect();
+
+      window.removeEventListener("resize", updateScale);
+      breakpoint.removeEventListener("change", updateScale);
+
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const MOVEMENT_THRESHOLD =16;
 
     const handlePointerMove = (event: PointerEvent) => {
@@ -328,7 +413,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const IDLE_TIMEOUT = 750;
+    const IDLE_TIMEOUT = 250;
 
     let idleTimer: ReturnType<typeof setTimeout>;
 
@@ -436,7 +521,7 @@ export default function Home() {
       {!showPortfolio && (
         <>
           {/* Full-screen landscape background */}
-          <IntroAtmosphere isExiting={isExiting} />
+          {/* <IntroAtmosphere isExiting={isExiting} /> */}
 
           {/* Top system bar */}
           <IntroTopBar
@@ -445,6 +530,8 @@ export default function Home() {
           />
           
           <PointerTracker />
+
+          {/* Central intro content */}
 
           {/* Mobile introduction */}
           <section
@@ -494,34 +581,37 @@ export default function Home() {
               <span className="cursor-blink">_</span>
             </p>
           </section>
-          
-          {/* Main desktop layout */}
+
           <div
-            className={`absolute inset-x-6 top-[78px] bottom-4 z-10
-              hidden min-[900px]:grid
-              grid-cols-[minmax(0,1fr)_260px]
-              min-[1101px]:grid-cols-[190px_minmax(0,1fr)_300px]
-              min-[1440px]:grid-cols-[190px_minmax(0,1fr)_340px]
-              items-stretch gap-6
+            ref={sceneRef}
+            className={`absolute z-10 left-1/2 top-[calc(50%+24px)]
+              hidden w-[calc(100vw-48px)] max-w-[1720px]
+              grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]
+              min-[900px]:grid
+              min-[1101px]:grid-cols-[190px_minmax(0,2.7fr)_minmax(0,0.9fr)]
+              min-[1440px]:grid-cols-[190px_minmax(0,1fr)_360px]
+              items-start gap-4 px-4
               transition-[opacity,filter] duration-700 ease-in-out
               ${
                 isExiting
                   ? "opacity-0 blur-sm"
                   : "opacity-100 blur-0"
               }`}
+            style={{
+              transform: `translate(calc(-50% - 4vw), -50%) scale(${sceneScale})`,
+              transformOrigin: "center",
+            }}
           >
 
-            {/* Sidebar - First Column */}
-            <div className="hidden min-w-0 self-stretch min-[1101px]:block">
-              <IntroSidebar />
-            </div>
+          <div className="hidden min-w-0 self-stretch min-[1101px]:block min-[1440px]:-translate-x-[230px]">
+            <IntroSidebar />
+          </div>
 
-            {/* Editor - Second Column */}
-            <div className="flex h-full min-h-0 w-full min-w-0 flex-col gap-2">
+            {/* Interactive code editor */}
+            <div className="flex min-w-0 flex-col items-start gap-[clamp(8px,1.3dvh,16px)] min-[1440px]:-ml-[220px] min-[1440px]:w-[calc(100%+220px)]">
 
               {/* CodeCanvas container */}
-              <div className="relative min-h-0 w-full flex-[1.5] overflow-hidden">
-
+              <div className="relative w-full min-w-0 overflow-hidden">
 
                 <CodeCanvas
                   activeCommand={terminalCommand}
@@ -561,7 +651,7 @@ export default function Home() {
               </div>
 
               {/* IntroTerminal stays BELOW CodeCanvas */}
-              <div className="min-h-0 w-full flex-1">
+              <div className="w-full min-w-0">
                 <IntroTerminal
                   ref={terminalRef}
                   onCommand={handleTerminalCommand}
@@ -571,10 +661,12 @@ export default function Home() {
                   secondaryExecutionComplete={secondaryExecutionComplete}
                   isVisitorIdle={isVisitorIdle}
                   onAutoKey={handleTerminalAutoKey}
+                  onStatusChange={setTerminalStatus}
                 />
               </div>
 
-              <div className="grid h-[210px] w-full min-w-0 shrink-0 grid-cols-[minmax(0,1fr)_150px] items-start gap-3">               
+              <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_150px] items-start gap-3">
+               
                 <div className="min-w-0">
                   <IntroKeyboard
                     isMouseActive={activeInput === "mouse"}
@@ -594,42 +686,62 @@ export default function Home() {
             </div>
 
             {/* Developer Introduction */}
-            <div className="relative isolate flex min-w-0 self-stretch flex-col items-start gap-2">
+            <div className="relative isolate flex min-w-0 self-stretch flex-col items-start gap-2 w-[calc(100%+80px)]">
 
               {/*  */}
               <div className="relative z-10 mt-[clamp(8px,2dvh,32px)] flex w-full min-w-0 flex-1 flex-col items-start gap-[clamp(4px,0.7dvh,8px)] [text-shadow:0_2px_6px_rgba(0,0,0,0.95)]">
-
-                {/* Baybayin Symbol */}
-                <span className="mb-3 font-mono text-4xl text-[#F5C542]">
-                  ᜀᜍᜒᜁᜐ᜔
-                </span>
                 
+              {/* Developer Identity Header */}
+              <div className="w-[calc(100%+80px)] max-w-[440px] min-w-0">
+
+                {/* Identification */}
+                <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#494538]/60 pb-2 font-mono text-[9px] tracking-[0.12em]">
+                  <span className="text-[#F5C542]">
+                    SYS://IDENTITY
+                  </span>
+
+                  <span className="text-[#92958B]">
+                    PERSONNEL_001
+                  </span>
+                </div>
+
+                {/* Baybayin and Profile Status */}
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="font-mono text-3xl leading-none text-[#F5C542]">
+                    ᜀᜍᜒᜁᜐ᜔
+                  </span>
+
+                  <span className="flex shrink-0 items-center gap-1 font-mono text-[9px] text-[#59C9A5]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#59C9A5]" />
+                    PROFILE READY
+                  </span>
+                </div>
+
                 {/* Developer Name */}
-                <h1 className="font-mono text-2xl font-semibold tracking-[0.15em] text-[#E6DDC9]">
+                <h1 className="font-mono text-[28px] font-semibold leading-tight tracking-[0.12em] text-[#E6DDC9]">
                   ADRIAN.JS
+                  <span className="text-[#F5C542]">_</span>
                 </h1>
 
-                {/* Developer Information */}
-                <p className="font-mono text-[10px] tracking-[0.18em] text-[#92958B]">
-                  SOFTWARE DEVELOPER
-                </p>
+                {/* Developer Details */}
+                <div className="mt-2 flex flex-col gap-1 font-mono text-[12px] tracking-[0.1em] text-[#92958B]">
+                  <p>SOFTWARE DEVELOPER</p>
+                  <p>BASED IN THE PHILIPPINES</p>
+                </div>
 
-                {/* */}
-                <p className="font-mono text-[10px] tracking-[0.18em] text-[#92958B]">
-                  BASED IN THE PHILIPPINES
-                </p>
+              </div>
                 
                 {/* Introduction */}
                 <div className="mt-[clamp(12px,2.5dvh,32px)] w-full max-w-[340px]">
                   <div className="mb-[clamp(8px,1.5dvh,24px)] h-px w-10 bg-[#494538]" />
-                    <p className="font-mono text-[12px] leading-6 text-[#E6DDC6]">
+                    <p className="font-mono text-[px] leading-6 text-[#E6DDC6]">
                       I build digital experiences,
                       explore emerging technologies,
                       and turn ideas into real solutions.
                     </p>
 
                     {/* Specialties */}
-                    <div className="mt-[clamp(10px,2dvh,28px)] flex flex-col gap-2 font-mono text-[10px] tracking-[0.1em] tracking-[0.1em] text-[#92958B]">
+                    <div className="mt-[clamp(10px,2dvh,28px)] flex flex-col gap-2 font-mono text-[13px] tracking-[0.1em] tracking-[0.1em] text-[#92958B]">
                       <p><span className="text-[#D94B43]">{"//"}</span> WEB APPLICATIONS</p>
                       <p><span className="text-[#D94B43]">{"//"}</span> CREATIVE SYSTEMS</p>
                       <p><span className="text-[#D94B43]">{"//"}</span> OPEN SOURCE</p>
@@ -687,13 +799,13 @@ export default function Home() {
                 )}
 
                 {/* System  Readout */}
-                <div className="mt-[clamp(16px,3dvh,36px)] w-full max-w-[340px] border-t border-[#494538] pt-[clamp(10px,1.5dvh,20px)]">
+                <div className="mt-3 w-full max-w-[340px] border-t border-[#494538] pt-3">
 
-                  <p className="mb-5 font-mono text-[10px] tracking-[0.15em] text-[#92958B]">
+                  <p className="mb-2 font-mono text-[10px] tracking-[0.15em] text-[#92958B]">
                     SYSTEM READOUT
                   </p>
 
-                  <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3 font-mono text-[10px]">
+                  <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 font-mono text-[10px]">
 
                     <span className="text-[#92958B]">› PATCH MODE</span>
                     <span className="text-[#F5C542] text-right">
@@ -705,9 +817,9 @@ export default function Home() {
                       {isSplit ? "SPLIT" : "SINGLE"}
                     </span>
 
-                    <span className="text-[#92958B]">› SESSION</span>
+                    <span className="text-[#92958B]">› TERMINAL</span>
                     <span className="text-[#F5C542] text-right">
-                      001
+                      {terminalStatus}
                     </span>
 
                     <span className="text-[#92958B]">› SYSTEM</span>

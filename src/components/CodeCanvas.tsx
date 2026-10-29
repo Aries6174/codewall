@@ -881,7 +881,7 @@ export default function CodeCanvas({
 
     
     return (
-        <div className="flex h-full min-h-0 w-full flex-col bg-[#080A09]/25">
+        <div className="w-full bg-[#080A09]/25">
 
             <div className="flex items-center justify-between px-3 py-2 border-b-2 border-[#494538]/40">
                 <div className="flex items-center gap-2">
@@ -908,7 +908,7 @@ export default function CodeCanvas({
                 ref={canvasRef}
                 width={620}
                 height={260}
-                className="block min-h-0 w-full flex-1"
+                className="block w-full h-[clamp(180px, 30dvh, 285px)] font-mono"
             />
 
             <div className="flex items-center justify-between px-3 py-3">

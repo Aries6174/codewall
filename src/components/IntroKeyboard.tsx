@@ -152,6 +152,11 @@ export default function IntroKeyboard({
   const keyboardRef = useRef<HTMLDivElement>(null);
   const pressedKeysRef = useRef<Set<string>>(new Set());
   const autoPressedRef = useRef<string[]>([]);
+  const autoHighlightedRef = useRef<string[]>([]);
+  const autoQueueRef = useRef<string[]>([]);
+  const autoPlayingRef = useRef(false);
+  const autoTimersRef = useRef<number[]>([]);
+  const lastAutoEventIdRef = useRef<number | null>(null);
 
   const [pressedKeys, setPressedKeys] = useState<string[]>([]);
   const [fingerTargets, setFingerTargets] = useState<
@@ -224,9 +229,14 @@ export default function IntroKeyboard({
     const activeKeys = [
       ...new Set([
         ...held,
-        ...autoPressedRef.current,
+        ...autoHighlightedRef.current.filter((key) => {
+          const finger = findFinger(key);
+
+          return !isMouseActive || !finger?.startsWith("right-");
+        }),
       ]),
     ];
+
 
     const targets: Record<string, Point> = {};
 
@@ -247,11 +257,6 @@ export default function IntroKeyboard({
 
       if (!finger || !position) continue;
 
-      // Keep the right hand available for mouse movement.
-      if (isMouseActive && finger.startsWith("right-")) {
-        continue;
-      }
-
       // Physical input takes priority over automatic input.
       if (targets[finger]) continue;
 
@@ -262,51 +267,119 @@ export default function IntroKeyboard({
     setFingerTargets(targets);
   }, [getKeyPosition, isMouseActive]);
 
-  useEffect(() => {
-    if (!autoKeyEvent) return;
+  const playNextAutoKey = useCallback(function playNextAutoKey() {
+    if (autoPlayingRef.current) return;
 
-    const character = autoKeyEvent.key;
+    const character = autoQueueRef.current.shift();
+    if (character === undefined) return;
+
     const shiftedKey = shiftedKeys[character];
     const key = shiftedKey ?? character.toLowerCase();
+
+    if (!getKeyPosition(key)) {
+      playNextAutoKey();
+      return;
+    }
 
     const isUppercase =
       character.length === 1 &&
       character >= "A" &&
       character <= "Z";
 
-    const needsShift =
-      isUppercase || shiftedKey !== undefined;
+    const needsShift = isUppercase || shiftedKey !== undefined;
+    const finger = findFinger(key);
 
-    if (!getKeyPosition(key)) {
-      autoPressedRef.current = [];
-      syncPressedKeys();
-      return;
-    }
+    const keys = needsShift
+      ? [
+          finger?.startsWith("left-")
+            ? "shift-right"
+            : "shift-left",
+          key,
+        ]
+      : [key];
 
-    if (needsShift) {
-      // Use the opposite hand for Shift.
-      const finger = findFinger(key);
+    autoPlayingRef.current = true;
 
-      const shiftKey = finger?.startsWith("left-")
-        ? "shift-right"
-        : "shift-left";
-
-      autoPressedRef.current = [shiftKey, key];
-    } else {
-      autoPressedRef.current = [key];
-    }
+    // Keep previous fingers active while adding the new key.
+    autoPressedRef.current = [
+      ...keys,
+      ...autoPressedRef.current,
+    ];
 
     syncPressedKeys();
 
-    const timeout = window.setTimeout(() => {
-      autoPressedRef.current = [];
-      syncPressedKeys();
-    }, 65);
+    // Track timers so they can be cleaned up.
+    const schedule = (callback: () => void, delay: number) => {
+      const timer = window.setTimeout(() => {
+        autoTimersRef.current = autoTimersRef.current.filter(
+          (id) => id !== timer
+        );
+        callback();
+      }, delay);
 
-    return () => {
-      window.clearTimeout(timeout);
+      autoTimersRef.current.push(timer);
     };
-  }, [autoKeyEvent, getKeyPosition, syncPressedKeys]);
+
+    // Highlight the key after the finger approaches.
+    schedule(() => {
+      autoHighlightedRef.current = [
+        ...keys,
+        ...autoHighlightedRef.current,
+      ];
+
+      syncPressedKeys();
+    }, 60);
+
+    // Start typing the next key.
+    schedule(() => {
+      autoPlayingRef.current = false;
+      playNextAutoKey();
+    }, 160);
+
+    // Release the previous finger and highlight after lingering.
+    schedule(() => {
+      for (const pressedKey of keys) {
+        const pressedIndex =
+          autoPressedRef.current.lastIndexOf(pressedKey);
+
+        if (pressedIndex !== -1) {
+          autoPressedRef.current.splice(pressedIndex, 1);
+        }
+
+        const highlightedIndex =
+          autoHighlightedRef.current.lastIndexOf(pressedKey);
+
+        if (highlightedIndex !== -1) {
+          autoHighlightedRef.current.splice(highlightedIndex, 1);
+        }
+      }
+
+      syncPressedKeys();
+    }, 280);
+  }, [getKeyPosition, syncPressedKeys]);
+
+
+useEffect(() => {
+    if (!autoKeyEvent) return;
+    if (lastAutoEventIdRef.current === autoKeyEvent.id) return;
+
+    lastAutoEventIdRef.current = autoKeyEvent.id;
+
+    // Avoid a large visual backlog during fast typing.
+    if (autoQueueRef.current.length >= 8) {
+      autoQueueRef.current.shift();
+    }
+
+    autoQueueRef.current.push(autoKeyEvent.key);
+    playNextAutoKey();
+  }, [autoKeyEvent, playNextAutoKey]);
+
+  useEffect(() => {
+    return () => {
+      autoTimersRef.current.forEach(window.clearTimeout);
+      autoQueueRef.current = [];
+    };
+  }, []);
 
   // Measure keyboard dimensions and positions.
   useEffect(() => {
@@ -396,7 +469,7 @@ export default function IntroKeyboard({
       {/* Keyboard */}
       <div
         ref={keyboardRef}
-        className="relative mx-auto mt-3 flex w-full min-w-0 flex-col gap-[3px] pb-[clamp(70px,10dvh,90px)]"
+        className="relative mx-auto mt-3 flex max-w-[620px] flex-col gap-[3px] pb-[clamp(95px,13dvh,140px)]"
       >
         {keyboardRows.map((row, rowIndex) => (
           <div key={rowIndex} className="flex gap-[3px]">

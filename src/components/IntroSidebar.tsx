@@ -30,7 +30,7 @@ export default function IntroSidebar() {
                 {navigation.map((item, index) => (
                 <div
                     key={item.number}
-                    className="flex items-center gap-3 text-[12px]"
+                    className="flex items-center gap-3 text-[15px]"
                 >
                     <span
                     className={`h-3.5 w-[2px] ${
