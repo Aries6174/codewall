@@ -11,6 +11,7 @@ import IntroMouse from "@/components/IntroMouse";
 import PointerTracker from "@/components/PointerTracker";
 import PointerTelemetry from "@/components/PointerTelemetry";
 import IntroFooter from "@/components/IntroFooter";
+import ThreeBackground from "@/components/ThreeBackground"
 
 type PatchPhase = "idle" | "running" | "complete";
 
@@ -297,6 +298,7 @@ export default function Home() {
 
   return (
     <main className="relative h-dvh overflow-hidden bg-background text-foreground">
+      <ThreeBackground />
       <IntroTopBar hasEntered={false} isExiting={false} />
       <PointerTracker />
 
