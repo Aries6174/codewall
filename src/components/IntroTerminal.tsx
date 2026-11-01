@@ -57,12 +57,13 @@ type PatchPhase = "idle" | "running" | "complete";
 export type IntroTerminalHandle = {
     completePatch: () => void;
     completeNavigation: () => void;
+    completeSecondaryEditing: () => void;
+    completeSecondaryExecution: () => void;
 };
 
 type IntroTerminalProps = {
     onCommand: (command: string) => void;
     patchPhase: PatchPhase;
-    onEnterSystem: () => void;
     secondaryEditComplete: boolean;
     secondaryExecutionComplete: boolean;
     isVisitorIdle: boolean;
@@ -75,7 +76,6 @@ export default function IntroTerminal({
     onCommand,
     onAutoKey,
     patchPhase,
-    onEnterSystem,
     secondaryEditComplete,
     secondaryExecutionComplete,
     isVisitorIdle,
@@ -131,142 +131,77 @@ export default function IntroTerminal({
         return () => window.clearTimeout(cooldown);
     }, [idleSequenceActive, commandIndex]);
 
-    // Update terminal history after patch completes
-    useImperativeHandle(ref, () => ({
-        completePatch: () => {
-            patchPendingRef.current = false;
+  // Update terminal results when operations finish.
+  useImperativeHandle(ref, () => ({
+    completePatch: () => {
+      patchPendingRef.current = false;
 
-            setHistory((previous) => {
-                const lastPatchIndex = previous.findLastIndex(
-                    (entry) =>
-                        (entry.input === "patch" ||
-                            entry.input === "run editor.patch") &&
-                        entry.output === "Applying source changes..."
-                );
-
-                if (lastPatchIndex === -1) return previous;
-
-                return previous.map((entry, index) => {
-                    if (index !== lastPatchIndex) return entry;
-
-                    return {
-                        ...entry,
-                        output:
-                            "Applying source changes...\nPatch completed successfully."
-                    };
-                });
-            });
-        },
-
-        completeNavigation: () => {
-            setHistory((previous) => {
-                const lastNavigationIndex = previous.findLastIndex(
-                    (entry) =>
-                        entry.input.startsWith("goto ") &&
-                        entry.output === "Navigating to source file..."
-                );
-
-                if (lastNavigationIndex === -1) return previous;
-
-                return previous.map((entry, index) => {
-                    if (index !== lastNavigationIndex) return entry;
-
-                    const filename = entry.input.slice(5);
-
-                    return {
-                        ...entry,
-                        output: `Navigating to source file...\nSource located: ${filename}`
-                    };
-                });
-            });
-        }
-
-    }), []);
-
-    // Update terminal history after navigation completes
-
-    // Handle patch and navigation completion
-    useImperativeHandle(ref, () => ({
-        completePatch: () => {
-            patchPendingRef.current = false;
-
-            setHistory((previous) => {
-                const lastPatchIndex = previous.findLastIndex(
-                    (entry) =>
-                        (entry.input === "patch" ||
-                            entry.input === "run editor.patch") &&
-                        entry.output === "Applying source changes..."
-                );
-
-                if (lastPatchIndex === -1) return previous;
-
-                return previous.map((entry, index) => {
-                    if (index !== lastPatchIndex) return entry;
-
-                    return {
-                        ...entry,
-                        output:
-                            "Applying source changes...\nPatch completed successfully."
-                    };
-                });
-            });
-        },
-
-        completeNavigation: () => {
-            setHistory((previous) => {
-                const lastNavigationIndex = previous.findLastIndex(
-                    (entry) =>
-                        entry.input.startsWith("goto ") &&
-                        entry.output === "Navigating to source file..."
-                );
-
-                if (lastNavigationIndex === -1) return previous;
-
-                return previous.map((entry, index) => {
-                    if (index !== lastNavigationIndex) return entry;
-
-                    const filename = entry.input.slice(5);
-
-                    return {
-                        ...entry,
-                        output: `Navigating to source file...\nSource located: ${filename}`
-                    };
-                });
-            });
-        }
-    }), []);
-
-    useEffect(() => {
-        if (!secondaryEditComplete) return;
-
-        setHistory((previous) =>
-            previous.map((entry) =>
-                entry.input === "editor.open preview.ts" &&
-                entry.output === "Opening secondary editor..."
-                    ? {
-                        ...entry,
-                        output: "Secondary editor ready.",
-                    }
-                    : entry
-            )
+      setHistory((previous) => {
+        const lastPatchIndex = previous.findLastIndex(
+          (entry) =>
+            (entry.input === "patch" ||
+              entry.input === "run editor.patch") &&
+            entry.output === "Applying source changes..."
         );
-    }, [secondaryEditComplete]);
 
-    useEffect(() => {
-        if (!secondaryExecutionComplete) return;
+        if (lastPatchIndex === -1) return previous;
 
-        setHistory((previous) =>
-            previous.map((entry) =>
-                entry.input === "editor.run preview.ts" &&
-                entry.output === "Executing preview..."
-                    ? {
-                        ...entry,
-                        output: "Preview executed successfully.",
-                    }
-                    : entry
-            )
+        return previous.map((entry, index) =>
+          index === lastPatchIndex
+            ? {
+                ...entry,
+                output:
+                  "Applying source changes...\nPatch completed successfully.",
+              }
+            : entry
         );
-    }, [secondaryExecutionComplete]);
+      });
+    },
+
+    completeNavigation: () => {
+      setHistory((previous) => {
+        const lastNavigationIndex = previous.findLastIndex(
+          (entry) =>
+            entry.input.startsWith("goto ") &&
+            entry.output === "Navigating to source file..."
+        );
+
+        if (lastNavigationIndex === -1) return previous;
+
+        return previous.map((entry, index) =>
+          index === lastNavigationIndex
+            ? {
+                ...entry,
+                output:
+                  `Navigating to source file...\nSource located: ${entry.input.slice(5)}`,
+              }
+            : entry
+        );
+      });
+    },
+
+    completeSecondaryEditing: () => {
+      setHistory((previous) =>
+        previous.map((entry) =>
+          entry.input === "editor.open preview.ts" &&
+          entry.output === "Opening secondary editor..."
+            ? { ...entry, output: "Secondary editor ready." }
+            : entry
+        )
+      );
+    },
+
+    completeSecondaryExecution: () => {
+      setHistory((previous) =>
+        previous.map((entry) =>
+          entry.input === "editor.run preview.ts" &&
+          entry.output === "Executing preview..."
+            ? { ...entry, output: "Preview executed successfully." }
+            : entry
+        )
+      );
+    },
+  }), []);
 
     // Automatic terminal typing
     useEffect(() => {
@@ -404,10 +339,6 @@ export default function IntroTerminal({
                 output = "Applying source changes...";
                 onCommand("run editor.patch");
             }
-
-        } else if (input === "enter system") {
-            output = "Initializing portfolio...";
-            onEnterSystem();
 
         } else if (input.startsWith("goto ")) {
             const filename = input.slice(5).trim();

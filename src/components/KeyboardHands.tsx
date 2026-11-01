@@ -358,7 +358,7 @@ export default function KeyboardHands({
       window.removeEventListener("resize", updateMousePosition);
       window.removeEventListener("scroll", updateMousePosition, true);
     };
-  }, [isMouseActive, width, height, mouseOffset.x, mouseOffset.y, wheelFingerOffset,]);
+  }, [isMouseActive, width, height, mouseOffset.x, mouseOffset.y, wheelFingerOffset, isWheelScrolling]);
 
   useEffect(() => {
     const handleMouseDown = (event: MouseEvent) => {
@@ -618,6 +618,7 @@ export default function KeyboardHands({
   }, [
     fingerTargets,
     height,
+    width,
     getRestingX,
     isMouseActive,
     mouseTarget,
