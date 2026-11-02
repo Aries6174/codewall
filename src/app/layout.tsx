@@ -9,9 +9,9 @@ const plexMono = IBM_Plex_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "ADRIAN.JS | Developer Portfolio",
+  title: "CODEWALL_ | ADRIAN.JS",
   description:
-    "An interactive developer portfolio featuring projects, experiments, and creative software development.",
+    "An interactive codewall with synchronized typing, a reactive keyboard, animated hands, and a command terminal.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
