@@ -28,6 +28,7 @@ The project started as the introduction to my developer portfolio. It now stands
 | [TypeScript](https://www.typescriptlang.org/) | Type-safe application logic |
 | [Tailwind CSS](https://tailwindcss.com/) | Styling and responsive layout |
 | HTML Canvas and SVG | Codewall rendering and input visualizations |
+| [Three.js](https://threejs.org/) | Black hole background shader |
 
 ## Getting Started
 
@@ -39,15 +40,13 @@ The project started as the introduction to my developer portfolio. It now stands
 ### Installation
 
 ```bash
-git clone https://github.com/Aries6174/creative-portfolio.git
-cd creative-portfolio
+git clone https://github.com/Aries6174/codewall.git
+cd codewall
 npm install
 npm run dev
 ```
 
 Visit **http://localhost:3000** in your browser.
-
-The repository is currently private, so cloning it requires GitHub access.
 
 ### Available Scripts
 
@@ -90,6 +89,7 @@ src/
 │   ├── KeyboardHands.tsx     # Animated hands and finger movement
 │   ├── IntroMouse.tsx        # Mouse visualizer
 │   ├── PointerTelemetry.tsx
+│   ├── ThreeBackground.tsx   # Black hole background
 │   ├── IntroTopBar.tsx
 │   └── IntroFooter.tsx
 ├── data/
